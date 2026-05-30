@@ -7,7 +7,7 @@ import re
 
 import keyring
 
-KEYRING_SERVICE = "mt5pnl"
+KEYRING_SERVICE = "mt5-pnl-exporter"
 
 
 def get_investor_password(login: int) -> str | None:

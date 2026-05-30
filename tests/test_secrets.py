@@ -78,14 +78,14 @@ def test_redact_filter_no_secrets_leaves_args_intact():
 def test_get_investor_password_delegates_to_keyring():
     with patch("mt5_pnl_exporter.secrets.keyring.get_password", return_value="pw123") as mock_get:
         result = get_investor_password(12345)
-    mock_get.assert_called_once_with("mt5pnl", "12345")
+    mock_get.assert_called_once_with("mt5-pnl-exporter", "12345")
     assert result == "pw123"
 
 
 def test_set_investor_password_delegates_to_keyring():
     with patch("mt5_pnl_exporter.secrets.keyring.set_password") as mock_set:
         set_investor_password(12345, "pw123")
-    mock_set.assert_called_once_with("mt5pnl", "12345", "pw123")
+    mock_set.assert_called_once_with("mt5-pnl-exporter", "12345", "pw123")
 
 
 def test_redact_filter_empty_secret_not_registered():
