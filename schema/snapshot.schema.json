@@ -1,0 +1,150 @@
+{
+  "$defs": {
+    "AccountSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "login": {
+          "title": "Login",
+          "type": "integer"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "currency": {
+          "title": "Currency",
+          "type": "string"
+        },
+        "balance": {
+          "title": "Balance",
+          "type": "number"
+        },
+        "equity": {
+          "title": "Equity",
+          "type": "number"
+        },
+        "last_success": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Success"
+        },
+        "last_error": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Error"
+        }
+      },
+      "required": [
+        "login",
+        "label",
+        "currency",
+        "balance",
+        "equity",
+        "last_success",
+        "last_error"
+      ],
+      "title": "AccountSnapshot",
+      "type": "object"
+    },
+    "DailyRow": {
+      "additionalProperties": false,
+      "properties": {
+        "account": {
+          "title": "Account",
+          "type": "integer"
+        },
+        "date": {
+          "title": "Date",
+          "type": "string"
+        },
+        "pnl": {
+          "title": "Pnl",
+          "type": "number"
+        },
+        "trades": {
+          "title": "Trades",
+          "type": "integer"
+        },
+        "wins": {
+          "title": "Wins",
+          "type": "integer"
+        },
+        "losses": {
+          "title": "Losses",
+          "type": "integer"
+        },
+        "gross_profit": {
+          "title": "Gross Profit",
+          "type": "number"
+        },
+        "gross_loss": {
+          "title": "Gross Loss",
+          "type": "number"
+        }
+      },
+      "required": [
+        "account",
+        "date",
+        "pnl",
+        "trades",
+        "wins",
+        "losses",
+        "gross_profit",
+        "gross_loss"
+      ],
+      "title": "DailyRow",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "accounts": {
+      "items": {
+        "$ref": "#/$defs/AccountSnapshot"
+      },
+      "title": "Accounts",
+      "type": "array"
+    },
+    "daily": {
+      "items": {
+        "$ref": "#/$defs/DailyRow"
+      },
+      "title": "Daily",
+      "type": "array"
+    },
+    "cash_flows": {
+      "items": {},
+      "title": "Cash Flows",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "generated_at",
+    "accounts",
+    "daily"
+  ],
+  "title": "Snapshot",
+  "type": "object"
+}
