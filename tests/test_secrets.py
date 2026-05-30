@@ -1,0 +1,106 @@
+"""Tests for secrets.py — redaction filter."""
+
+from __future__ import annotations
+
+import logging
+from unittest.mock import patch
+
+from mt5_pnl_exporter.secrets import _RedactFilter, get_investor_password, set_investor_password
+
+
+def _make_logger(name: str = "test") -> tuple[logging.Logger, list[logging.LogRecord]]:
+    log = logging.getLogger(name)
+    log.setLevel(logging.DEBUG)
+    records: list[logging.LogRecord] = []
+
+    class _Capture(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record)
+
+    handler = _Capture()
+    log.addHandler(handler)
+    return log, records
+
+
+def test_redact_filter_replaces_secret(caplog):
+    filt = _RedactFilter()
+    filt.register("s3cr3t")
+
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="",
+        lineno=0,
+        msg="password is s3cr3t",
+        args=(),
+        exc_info=None,
+    )
+    filt.filter(record)
+    assert record.getMessage() == "password is ***"
+
+
+def test_redact_filter_does_not_corrupt_percent_formatting():
+    """After a secret is registered, log.info("count=%d", n) must not raise."""
+    filt = _RedactFilter()
+    filt.register("s3cr3t")
+
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="",
+        lineno=0,
+        msg="count=%d",
+        args=(42,),
+        exc_info=None,
+    )
+    # Must not raise TypeError
+    filt.filter(record)
+    assert record.getMessage() == "count=42"
+
+
+def test_redact_filter_no_secrets_leaves_args_intact():
+    """With no registered secrets, args are not touched."""
+    filt = _RedactFilter()
+
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="",
+        lineno=0,
+        msg="count=%d",
+        args=(7,),
+        exc_info=None,
+    )
+    filt.filter(record)
+    assert record.getMessage() == "count=7"
+
+
+def test_get_investor_password_delegates_to_keyring():
+    with patch("mt5_pnl_exporter.secrets.keyring.get_password", return_value="pw123") as mock_get:
+        result = get_investor_password(12345)
+    mock_get.assert_called_once_with("mt5pnl", "12345")
+    assert result == "pw123"
+
+
+def test_set_investor_password_delegates_to_keyring():
+    with patch("mt5_pnl_exporter.secrets.keyring.set_password") as mock_set:
+        set_investor_password(12345, "pw123")
+    mock_set.assert_called_once_with("mt5pnl", "12345", "pw123")
+
+
+def test_redact_filter_empty_secret_not_registered():
+    """register('') should not add an empty pattern that matches everything."""
+    filt = _RedactFilter()
+    filt.register("")
+
+    record = logging.LogRecord(
+        name="test",
+        level=logging.INFO,
+        pathname="",
+        lineno=0,
+        msg="hello world",
+        args=(),
+        exc_info=None,
+    )
+    filt.filter(record)
+    assert record.getMessage() == "hello world"
