@@ -1,0 +1,34 @@
+# Secrets — never commit
+config.yaml
+.env
+*.credentials
+
+# Snapshot data — never commit (may contain account numbers, balances)
+snapshot.json
+*.snapshot.json
+data/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# uv
+.python-version
+
+# macOS
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json

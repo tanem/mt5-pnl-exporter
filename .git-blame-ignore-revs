@@ -1,0 +1,3 @@
+# ruff format pass — bulk whitespace normalisation
+# Skip with: git blame --ignore-revs-file .git-blame-ignore-revs
+ba3d759
