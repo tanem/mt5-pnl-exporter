@@ -52,7 +52,8 @@ def write(path: Path, snap: Snapshot) -> None:
 def read(path: Path) -> Snapshot:
     if not path.exists():
         raise FileNotFoundError(
-            f"Snapshot not found: {path}\nRun 'mt5-pnl-exporter poll' on the VPS first to generate it."
+            f"Snapshot not found: {path}\n"
+            "Run 'mt5-pnl-exporter poll' on the VPS first to generate it."
         )
     try:
         data = json.loads(path.read_text())
