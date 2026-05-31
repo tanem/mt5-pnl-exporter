@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from mt5_pnl_exporter.secrets import get_investor_password, redact_filter
 
@@ -15,24 +15,22 @@ _DEFAULT_CONFIG_PATH = Path("config.yaml")
 
 
 class AccountConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     label: str
     login: int
     server: str
 
 
-class PollConfig(BaseModel):
+class Config(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    snapshot_path: str
     terminal_path: str = ""
+    accounts: list[AccountConfig]
 
     @field_validator("terminal_path", mode="before")
     @classmethod
     def _terminal_path_none_to_empty(cls, v: Any) -> str:
         return v or ""
-
-
-class Config(BaseModel):
-    snapshot_path: str
-    accounts: list[AccountConfig]
-    poll: PollConfig = PollConfig()
 
     @field_validator("accounts")
     @classmethod
@@ -50,12 +48,7 @@ class Config(BaseModel):
 
 
 def check_file_perms(path: Path) -> None:
-    """Warn if config has group/other-readable bits.
-
-    Only call from poll — query commands skip this.
-    """
-    # Windows reports synthesised POSIX bits (typically 0o666) — file security
-    # is handled by NTFS ACLs there, not mode bits.
+    """Warn if config has group/other-readable bits. Only call from poll."""
     if os.name == "nt":
         return
     mode = path.stat().st_mode & 0o777
