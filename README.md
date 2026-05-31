@@ -11,7 +11,7 @@ for the contract and the wider design.
 
 ```bash
 uv tool install "mt5-pnl-exporter[mt5]"   # VPS, includes MetaTrader5
-uv tool install mt5-pnl-exporter          # any OS, schema/smoke-test work
+uv tool install mt5-pnl-exporter          # any OS — schema command only
 ```
 
 ## Quick start (VPS)
@@ -48,8 +48,8 @@ Schema version stamping is a plain integer (`SCHEMA_VERSION = 2`) in 0.x.
 
 The snapshot stores one record per closed deal, so it grows with trading
 volume. Rough sizing: ~350 bytes per closed-deal record. Ten accounts
-with two years of 50-deals-per-day-per-account history is around 85 MB;
-busier setups (200 deals/day) reach ~350 MB. Local reads and writes are
+with two years of 50-deals-per-day-per-account history (~250 trading
+days/year) is around 90 MB; busier setups (200 deals/day) reach ~350 MB. Local reads and writes are
 fast at these sizes — the only operational concern is transport over a
 sync service (Dropbox, Syncthing) re-syncing the whole file each poll.
 Mitigation lands in Phase 1b cycle 2, which adds gzip-before-encryption.
