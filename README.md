@@ -25,7 +25,6 @@ mt5-pnl-exporter poll                        # writes snapshot.json
 ## Commands
 
 - `mt5-pnl-exporter poll` — fetch deals from MT5 and write `snapshot.json` atomically.
-- `mt5-pnl-exporter poll --source fixture` — write a snapshot from `tests/fixtures/sample_deals.json` (smoke test, no creds).
 - `mt5-pnl-exporter set-password <login>` — store an investor password in the OS keychain (`keyring`).
 - `mt5-pnl-exporter schema` — regenerate `schema/snapshot.schema.json` from the pydantic `Snapshot` model.
 
@@ -35,8 +34,25 @@ mt5-pnl-exporter poll                        # writes snapshot.json
 committed. CI (`tests/test_schema_file.py`) fails if it drifts. Consumers
 vendor the file from a specific release.
 
-Schema version stamping is a plain integer (`SCHEMA_VERSION = 1`) in 0.x.
-`major.minor` versioning ships in the 1.0 release (Phase 1b of the repo split).
+The snapshot carries one record per closed deal (`ClosedDeal`), open
+position (`OpenPosition`), and balance-family deal — deposit, withdrawal,
+credit, charge, correction, bonus, commission (`CashFlow`). Plus one
+`AccountSnapshot` per account with balance, equity, currency, and the
+last-success/last-error stamps. No pre-aggregation — consumers slice the
+raw records however they want.
+
+Schema version stamping is a plain integer (`SCHEMA_VERSION = 2`) in 0.x.
+`major.minor` versioning ships in the 1.0 release (Phase 1b cycle 4).
+
+## Snapshot size
+
+The snapshot stores one record per closed deal, so it grows with trading
+volume. Rough sizing: ~350 bytes per closed-deal record. Ten accounts
+with two years of 50-deals-per-day-per-account history is around 85 MB;
+busier setups (200 deals/day) reach ~350 MB. Local reads and writes are
+fast at these sizes — the only operational concern is transport over a
+sync service (Dropbox, Syncthing) re-syncing the whole file each poll.
+Mitigation lands in Phase 1b cycle 2, which adds gzip-before-encryption.
 
 ## Status
 
