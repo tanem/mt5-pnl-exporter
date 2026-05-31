@@ -2616,15 +2616,37 @@ Expected: no errors.
 Run: `uv run mt5-pnl-exporter schema` then `git diff --stat schema/snapshot.schema.json`
 Expected: no diff (schema was regenerated in Task 1).
 
-- [ ] **Step 6: Push the branch**
+- [ ] **Step 6: Push the branch and open a PR**
+
+Cycle 1 work lives on `phase-1b-cycle-1`. Push the branch and open a draft PR for review; do NOT merge or push to `main`.
 
 ```bash
 cd /Users/tane/Code/mt5-pnl-exporter
 git status
-git log --oneline origin/main..HEAD
-git push origin main
+git log --oneline main..HEAD
+git push -u origin phase-1b-cycle-1
+gh pr create --draft --base main --head phase-1b-cycle-1 \
+  --title "Phase 1b cycle 1: snapshot redesign + cascades" \
+  --body "$(cat <<'EOF'
+## Summary
+- Replaces `DailyRow` with raw `ClosedDeal` / `OpenPosition` / `CashFlow` records (schema v2).
+- `DataSource` protocol grows to three fetchers; `MT5Source` memoises `history_deals_get`.
+- Drops `aggregate.py`, `FixtureSource`, the `--source` flag, and the `poll:` config wrapper.
+- Tests pivot to snapshot round-trip + source field-copy fidelity; new `tests/fixtures/sample_snapshot.json`.
+
+See [`docs/superpowers/specs/2026-06-01-phase-1b-cycle-1-design.md`](docs/superpowers/specs/2026-06-01-phase-1b-cycle-1-design.md)
+and [`docs/superpowers/plans/2026-06-01-phase-1b-cycle-1.md`](docs/superpowers/plans/2026-06-01-phase-1b-cycle-1.md).
+
+## Test plan
+- [ ] `uv run pytest` passes with coverage ≥ 95%
+- [ ] `uv run ruff check src/ tests/` clean
+- [ ] `uv run ruff format --check src/ tests/` clean
+- [ ] `uv run mypy src/mt5_pnl_exporter` clean
+- [ ] `schema/snapshot.schema.json` regenerated and committed
+EOF
+)"
 ```
-Expected: `git status` reports a clean tree; `git log` shows the cycle-1 commits; `git push` succeeds.
+Expected: `git status` reports a clean tree; `git log` shows the cycle-1 commits; `git push` succeeds; `gh pr create` returns a PR URL. Report the URL back to the user.
 
 ---
 
