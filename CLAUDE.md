@@ -33,7 +33,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 - **Never import `MetaTrader5` at module level.** It is deferred inside `MT5Source` (sources/mt5.py).
 - **Investor passwords only**, stored in the VPS keychain via `keyring`. `redact_filter` (secrets.py) strips them from logs. The `config.yaml` perms check (`check_file_perms`) is enforced by `poll` only.
 - **A dedicated MT5 terminal is required**: `mt5.login()` switches the terminal's active account, so pointing it at an EA terminal logs the EA out.
-- **MT5 history sync is async.** `fetch_deals()` waits for `history_deals_total(from, to)` to stabilise before calling `history_deals_get()`.
+- **MT5 history sync is async.** `_get_history_raw()` waits for `history_deals_total(from, to)` to stabilise before calling `history_deals_get()`.
 - **Deal classification**: `MT5Source.fetch_closed_deals` keeps only `DEAL_ENTRY_OUT`/`INOUT` records with non-balance-family types. `fetch_cash_flows` keeps only balance-family types (`BALANCE`, `CREDIT`, `CHARGE`, `CORRECTION`, `BONUS`, `COMMISSION`). `_get_history_raw` memoises `history_deals_get` per `(login, date_from, date_to)` so the two fetchers share one round-trip to MT5.
 - **Regenerate the schema after model changes**: `uv run mt5-pnl-exporter schema`. `tests/test_schema_file.py` catches missed regenerations.
 - **`SCHEMA_VERSION` is `2`** (plain integer). Major.minor versioning lands in Phase 1b cycle 4.
