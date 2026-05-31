@@ -55,6 +55,22 @@ def test_terminal_path_defaults_to_empty(tmp_path):
     assert cfg.terminal_path == ""
 
 
+def test_terminal_path_null_coerced_to_empty(tmp_path):
+    """YAML `terminal_path: null` (the field validator's reason for existing) → ''."""
+    cfg_path = tmp_path / "config.yaml"
+    _write_cfg(
+        cfg_path,
+        "snapshot_path: /tmp/s.json\n"
+        "terminal_path: null\n"
+        "accounts:\n"
+        "  - label: Test\n"
+        "    login: 1\n"
+        "    server: TestBroker\n",
+    )
+    cfg = load_config(cfg_path)
+    assert cfg.terminal_path == ""
+
+
 # ─── validators ──────────────────────────────────────────────────────────────
 
 
@@ -108,6 +124,15 @@ def test_check_file_perms_silent_on_600(tmp_path, capsys):
     check_file_perms(cfg_path)
     captured = capsys.readouterr()
     assert captured.err == ""
+
+
+def test_check_file_perms_skipped_on_windows(tmp_path, monkeypatch, capsys):
+    """On Windows the perms check is a no-op (NTFS ACLs do the work, not mode bits)."""
+    monkeypatch.setattr(os, "name", "nt")
+    cfg_path = tmp_path / "config.yaml"
+    cfg_path.write_text("x: 1\n")
+    check_file_perms(cfg_path)
+    assert capsys.readouterr().err == ""
 
 
 # ─── resolve_passwords ───────────────────────────────────────────────────────
