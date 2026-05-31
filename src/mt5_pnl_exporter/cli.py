@@ -12,11 +12,17 @@ from typing import Annotated
 import typer
 from rich.console import Console
 
-from mt5_pnl_exporter import aggregate, snapshot
+from mt5_pnl_exporter import snapshot
 from mt5_pnl_exporter.config import check_file_perms, load_config, resolve_passwords
 from mt5_pnl_exporter.secrets import redact_filter, set_investor_password
-from mt5_pnl_exporter.snapshot import AccountSnapshot, Snapshot
-from mt5_pnl_exporter.sources.base import DataSource
+from mt5_pnl_exporter.snapshot import (
+    AccountSnapshot,
+    CashFlow,
+    ClosedDeal,
+    OpenPosition,
+    Snapshot,
+)
+from mt5_pnl_exporter.sources.mt5 import MT5Source
 
 app = typer.Typer(
     help="MT5 P&L exporter — poll deal history, write snapshot.json.",
@@ -35,10 +41,9 @@ def _setup_logging(verbose: bool = False) -> None:
 @app.command()
 def poll(
     config_path: Annotated[Path | None, typer.Option("--config", "-c")] = None,
-    source: Annotated[str, typer.Option(help="Data source: mt5 or fixture")] = "mt5",
     verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
 ) -> None:
-    """Fetch deal history from MT5 and write snapshot.json. Run on the VPS."""
+    """Fetch deal history + open positions from MT5 and write snapshot.json."""
     _setup_logging(verbose)
     log = logging.getLogger(__name__)
 
@@ -47,18 +52,9 @@ def poll(
     snap_path = Path(cfg.snapshot_path)
     snap_path.parent.mkdir(parents=True, exist_ok=True)
 
-    src: DataSource
-    if source == "fixture":
-        from mt5_pnl_exporter.sources.fixture import FixtureSource
-
-        src = FixtureSource()
-        passwords: dict[int, str] = {}
-    else:
-        from mt5_pnl_exporter.sources.mt5 import MT5Source
-
-        passwords = resolve_passwords(cfg)
-        servers = {a.login: a.server for a in cfg.accounts}
-        src = MT5Source(cfg.poll.terminal_path, passwords, servers)
+    passwords = resolve_passwords(cfg)
+    servers = {a.login: a.server for a in cfg.accounts}
+    src = MT5Source(cfg.terminal_path, passwords, servers)
 
     now = datetime.datetime.now(tz=datetime.UTC)
     epoch_from = 0
@@ -72,15 +68,21 @@ def poll(
         pass
 
     accounts_out: list[AccountSnapshot] = []
-    daily_out = []
+    closed_deals_out: list[ClosedDeal] = []
+    open_positions_out: list[OpenPosition] = []
+    cash_flows_out: list[CashFlow] = []
     error_count = 0
 
     for acct in cfg.accounts:
         try:
             info = src.account_info(acct.login)
-            deals = src.fetch_deals(acct.login, epoch_from, epoch_to)
-            daily = aggregate.deals_to_daily(deals)
-            daily_out.extend(daily)
+            deals = src.fetch_closed_deals(acct.login, epoch_from, epoch_to)
+            flows = src.fetch_cash_flows(acct.login, epoch_from, epoch_to)
+            positions = src.fetch_open_positions(acct.login)
+
+            closed_deals_out.extend(deals)
+            cash_flows_out.extend(flows)
+            open_positions_out.extend(positions)
             accounts_out.append(
                 AccountSnapshot(
                     login=acct.login,
@@ -92,10 +94,10 @@ def poll(
                     last_error=None,
                 )
             )
-            trade_count = sum(r.trades for r in daily)
-            day_count = len(daily)
             log.info(
-                f"[poll] {acct.label} ({acct.login}): {trade_count} trades -> {day_count} days  OK"
+                f"[poll] {acct.label} ({acct.login}): "
+                f"{len(deals)} closed deals, {len(positions)} open, "
+                f"{len(flows)} cash flows  OK"
             )
         except Exception as exc:
             error_count += 1
@@ -122,11 +124,12 @@ def poll(
             raise SystemExit(1)
 
         snap = Snapshot(
-            schema_version=1,
+            schema_version=2,
             generated_at=now.isoformat().replace("+00:00", "Z"),
             accounts=accounts_out,
-            daily=daily_out,
-            cash_flows=[],
+            closed_deals=closed_deals_out,
+            open_positions=open_positions_out,
+            cash_flows=cash_flows_out,
         )
         snapshot.write(snap_path, snap)
         log.info(f"[poll] wrote {snap_path}  ({now.strftime('%Y-%m-%d %H:%M')})")
