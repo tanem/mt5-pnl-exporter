@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "generated_at": "2025-01-15T10:00:00Z",
+  "accounts": [
+    {
+      "login": 1234567,
+      "label": "Trend EA",
+      "currency": "USD",
+      "balance": 10240.50,
+      "equity": 10198.20,
+      "last_success": "2025-01-15T10:00:00Z",
+      "last_error": null
+    },
+    {
+      "login": 7654321,
+      "label": "Scalper EA",
+      "currency": "USD",
+      "balance": 8910.00,
+      "equity": 8874.50,
+      "last_success": "2025-01-15T10:00:00Z",
+      "last_error": null
+    }
+  ],
+  "closed_deals": [
+    {"account": 1234567, "ticket": 1001, "order": 5001, "position_id": 9001, "time": 1736899200, "time_msc": 1736899200000, "type": 0, "entry": 1, "reason": 0, "magic": 100, "volume": 0.10, "price": 1.0810, "profit": 25.50, "swap": -0.20, "commission": -0.50, "fee": 0.0, "symbol": "EURUSD", "comment": "tp hit", "external_id": ""},
+    {"account": 1234567, "ticket": 1002, "order": 5002, "position_id": 9002, "time": 1736902800, "time_msc": 1736902800000, "type": 1, "entry": 1, "reason": 0, "magic": 100, "volume": 0.10, "price": 1.0825, "profit": -12.00, "swap": 0.0, "commission": -0.50, "fee": 0.0, "symbol": "EURUSD", "comment": "sl hit", "external_id": ""},
+    {"account": 1234567, "ticket": 1003, "order": 5003, "position_id": 9003, "time": 1736906400, "time_msc": 1736906400000, "type": 0, "entry": 3, "reason": 0, "magic": 100, "volume": 0.20, "price": 1.0830, "profit": 40.00, "swap": -0.50, "commission": -1.00, "fee": 0.0, "symbol": "EURUSD", "comment": "", "external_id": ""},
+    {"account": 7654321, "ticket": 2001, "order": 6001, "position_id": 10001, "time": 1736899800, "time_msc": 1736899800000, "type": 0, "entry": 1, "reason": 0, "magic": 200, "volume": 0.05, "price": 1.2705, "profit": 8.00, "swap": 0.0, "commission": -0.25, "fee": 0.0, "symbol": "GBPUSD", "comment": "", "external_id": ""},
+    {"account": 7654321, "ticket": 2002, "order": 6002, "position_id": 10002, "time": 1736903400, "time_msc": 1736903400000, "type": 1, "entry": 1, "reason": 0, "magic": 200, "volume": 0.05, "price": 1.2720, "profit": -5.00, "swap": 0.0, "commission": -0.25, "fee": 0.0, "symbol": "GBPUSD", "comment": "", "external_id": ""}
+  ],
+  "open_positions": [
+    {"account": 1234567, "ticket": 1100, "identifier": 9100, "time": 1736910000, "time_msc": 1736910000000, "time_update": 1736913600, "time_update_msc": 1736913600000, "type": 0, "reason": 0, "magic": 100, "volume": 0.10, "price_open": 1.0840, "price_current": 1.0855, "sl": 1.0820, "tp": 1.0880, "profit": 15.00, "swap": 0.0, "symbol": "EURUSD", "comment": "", "external_id": ""},
+    {"account": 7654321, "ticket": 2100, "identifier": 10100, "time": 1736910600, "time_msc": 1736910600000, "time_update": 1736913600, "time_update_msc": 1736913600000, "type": 1, "reason": 0, "magic": 200, "volume": 0.05, "price_open": 1.2730, "price_current": 1.2725, "sl": 1.2745, "tp": 1.2710, "profit": 2.50, "swap": 0.0, "symbol": "GBPUSD", "comment": "", "external_id": ""}
+  ],
+  "cash_flows": [
+    {"account": 1234567, "ticket": 500, "order": 0, "position_id": 0, "time": 1736000000, "time_msc": 1736000000000, "type": 2, "entry": 0, "reason": 0, "magic": 0, "volume": 0.0, "price": 0.0, "profit": 10000.00, "swap": 0.0, "commission": 0.0, "fee": 0.0, "symbol": "", "comment": "Initial deposit", "external_id": ""},
+    {"account": 7654321, "ticket": 600, "order": 0, "position_id": 0, "time": 1736000000, "time_msc": 1736000000000, "type": 2, "entry": 0, "reason": 0, "magic": 0, "volume": 0.0, "price": 0.0, "profit": 9000.00, "swap": 0.0, "commission": 0.0, "fee": 0.0, "symbol": "", "comment": "Initial deposit", "external_id": ""}
+  ]
+}

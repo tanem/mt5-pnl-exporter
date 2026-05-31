@@ -1,156 +1,166 @@
-"""Tests for config loading and the POSIX perms check."""
+"""Tests for config.py — flat shape (no poll: wrapper), validators, keyring."""
 
 from __future__ import annotations
 
 import os
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
+from mt5_pnl_exporter.config import (
+    AccountConfig,
+    Config,
+    check_file_perms,
+    load_config,
+    resolve_passwords,
+)
 
-def _write_cfg(path: Path, snapshot_path: str) -> None:
-    path.write_text(
-        f"snapshot_path: '{snapshot_path}'\n"
+
+def _write_cfg(path: Path, body: str) -> None:
+    path.write_text(body)
+
+
+# ─── flat shape ──────────────────────────────────────────────────────────────
+
+
+def test_terminal_path_is_top_level(tmp_path):
+    cfg_path = tmp_path / "config.yaml"
+    _write_cfg(
+        cfg_path,
+        "snapshot_path: /tmp/s.json\n"
+        "terminal_path: 'C:\\mt5\\terminal64.exe'\n"
         "accounts:\n"
-        "  - label: 'Test'\n"
-        "    login: 1234567\n"
-        "    server: 'TestBroker-Live'\n"
+        "  - label: Test\n"
+        "    login: 1\n"
+        "    server: TestBroker\n",
     )
+    cfg = load_config(cfg_path)
+    assert cfg.terminal_path == "C:\\mt5\\terminal64.exe"
+    assert cfg.snapshot_path == "/tmp/s.json"
 
 
-def test_perms_check_warns_when_world_readable(tmp_path, capsys):
+def test_terminal_path_defaults_to_empty(tmp_path):
+    """Omitting terminal_path is allowed; defaults to empty string."""
     cfg_path = tmp_path / "config.yaml"
-    _write_cfg(cfg_path, str(tmp_path / "snapshot.json"))
-    os.chmod(cfg_path, 0o644)  # group/other readable — should warn
+    _write_cfg(
+        cfg_path,
+        "snapshot_path: /tmp/s.json\n"
+        "accounts:\n"
+        "  - label: Test\n"
+        "    login: 1\n"
+        "    server: TestBroker\n",
+    )
+    cfg = load_config(cfg_path)
+    assert cfg.terminal_path == ""
 
-    from mt5_pnl_exporter.config import check_file_perms
 
+def test_terminal_path_null_coerced_to_empty(tmp_path):
+    """YAML `terminal_path: null` (the field validator's reason for existing) → ''."""
+    cfg_path = tmp_path / "config.yaml"
+    _write_cfg(
+        cfg_path,
+        "snapshot_path: /tmp/s.json\n"
+        "terminal_path: null\n"
+        "accounts:\n"
+        "  - label: Test\n"
+        "    login: 1\n"
+        "    server: TestBroker\n",
+    )
+    cfg = load_config(cfg_path)
+    assert cfg.terminal_path == ""
+
+
+# ─── validators ──────────────────────────────────────────────────────────────
+
+
+def test_accounts_not_empty(tmp_path):
+    cfg_path = tmp_path / "config.yaml"
+    _write_cfg(cfg_path, "snapshot_path: /tmp/s.json\naccounts: []\n")
+    with pytest.raises(ValueError, match="accounts"):
+        load_config(cfg_path)
+
+
+def test_labels_unique(tmp_path):
+    cfg_path = tmp_path / "config.yaml"
+    _write_cfg(
+        cfg_path,
+        "snapshot_path: /tmp/s.json\n"
+        "accounts:\n"
+        "  - label: Same\n"
+        "    login: 1\n"
+        "    server: A\n"
+        "  - label: Same\n"
+        "    login: 2\n"
+        "    server: B\n",
+    )
+    with pytest.raises(ValueError, match="unique"):
+        load_config(cfg_path)
+
+
+def test_load_config_missing_file(tmp_path):
+    with pytest.raises(FileNotFoundError, match=r"config\.example\.yaml"):
+        load_config(tmp_path / "nope.yaml")
+
+
+# ─── perms ───────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.skipif(os.name == "nt", reason="POSIX perms only")
+def test_check_file_perms_warns_on_world_readable(tmp_path, capsys):
+    cfg_path = tmp_path / "config.yaml"
+    cfg_path.write_text("x: 1\n")
+    os.chmod(cfg_path, 0o644)
     check_file_perms(cfg_path)
     captured = capsys.readouterr()
-    # Rich Console(stderr=True) writes to sys.stderr; collapse wrapping
-    assert "chmod 600" in captured.err.replace("\n", " "), captured.err
+    assert "chmod 600" in captured.err
 
 
-def test_perms_check_silent_when_600(tmp_path, capsys):
+@pytest.mark.skipif(os.name == "nt", reason="POSIX perms only")
+def test_check_file_perms_silent_on_600(tmp_path, capsys):
     cfg_path = tmp_path / "config.yaml"
-    _write_cfg(cfg_path, str(tmp_path / "snapshot.json"))
+    cfg_path.write_text("x: 1\n")
     os.chmod(cfg_path, 0o600)
-
-    from mt5_pnl_exporter.config import check_file_perms
-
     check_file_perms(cfg_path)
     captured = capsys.readouterr()
-    assert "chmod 600" not in captured.err, captured.err
+    assert captured.err == ""
 
 
-def test_perms_check_skipped_on_windows(tmp_path, monkeypatch, capsys):
-    # monkeypatch os.name to "nt" — safe here because cfg_path is already
-    # a PosixPath and check_file_perms doesn't construct new Path objects.
+def test_check_file_perms_skipped_on_windows(tmp_path, monkeypatch, capsys):
+    """On Windows the perms check is a no-op (NTFS ACLs do the work, not mode bits)."""
     monkeypatch.setattr(os, "name", "nt")
     cfg_path = tmp_path / "config.yaml"
-    _write_cfg(cfg_path, str(tmp_path / "snapshot.json"))
-    # Even with world-readable bits, Windows path should NOT warn —
-    # NTFS ACLs handle file security, st_mode is synthesised.
-    os.chmod(cfg_path, 0o666)
-
-    from mt5_pnl_exporter.config import check_file_perms
-
+    cfg_path.write_text("x: 1\n")
     check_file_perms(cfg_path)
-    captured = capsys.readouterr()
-    assert "chmod 600" not in captured.err, captured.err
+    assert capsys.readouterr().err == ""
 
 
-def test_terminal_path_null_coerced_to_empty():
-    from mt5_pnl_exporter.config import Config
+# ─── resolve_passwords ───────────────────────────────────────────────────────
 
-    cfg = Config.model_validate(
-        {
-            "snapshot_path": "/irrelevant",
-            "accounts": [{"label": "Test", "login": 1234567, "server": "TestBroker-Live"}],
-            "poll": {"terminal_path": None},
-        }
+
+def test_resolve_passwords_pulls_from_keyring():
+    cfg = Config(
+        snapshot_path="/tmp/s.json",
+        terminal_path="",
+        accounts=[
+            AccountConfig(label="A", login=1, server="X"),
+            AccountConfig(label="B", login=2, server="Y"),
+        ],
     )
-    assert cfg.poll.terminal_path == ""
+    with patch("mt5_pnl_exporter.config.get_investor_password") as gp:
+        gp.side_effect = lambda login: f"pw-{login}"
+        result = resolve_passwords(cfg)
+    assert result == {1: "pw-1", 2: "pw-2"}
 
 
-def test_poll_section_optional():
-    from mt5_pnl_exporter.config import Config
-
-    cfg = Config.model_validate(
-        {
-            "snapshot_path": "/irrelevant",
-            "accounts": [{"label": "Test", "login": 1234567, "server": "TestBroker-Live"}],
-        }
+def test_resolve_passwords_raises_when_missing():
+    cfg = Config(
+        snapshot_path="/tmp/s.json",
+        terminal_path="",
+        accounts=[AccountConfig(label="A", login=1, server="X")],
     )
-    assert cfg.poll.terminal_path == ""
-
-
-def test_missing_config_raises(tmp_path):
-    from mt5_pnl_exporter.config import load_config
-
-    with pytest.raises(FileNotFoundError, match="Config file not found"):
-        load_config(tmp_path / "missing.yaml")
-
-
-def test_duplicate_account_labels_rejected():
-    from pydantic import ValidationError
-
-    from mt5_pnl_exporter.config import Config
-
-    with pytest.raises(ValidationError, match="labels must be unique"):
-        Config.model_validate(
-            {
-                "snapshot_path": "/irrelevant",
-                "accounts": [
-                    {"label": "alpha", "login": 1, "server": "X"},
-                    {"label": "alpha", "login": 2, "server": "X"},
-                ],
-            }
-        )
-
-
-def test_empty_accounts_rejected():
-    from pydantic import ValidationError
-
-    from mt5_pnl_exporter.config import Config
-
-    with pytest.raises(ValidationError, match="accounts list must not be empty"):
-        Config.model_validate(
-            {
-                "snapshot_path": "/irrelevant",
-                "accounts": [],
-            }
-        )
-
-
-def test_resolve_passwords_missing_raises(monkeypatch):
-    import mt5_pnl_exporter.config as config_mod
-    from mt5_pnl_exporter.config import Config, resolve_passwords
-
-    monkeypatch.setattr(config_mod, "get_investor_password", lambda login: None)
-    cfg = Config.model_validate(
-        {
-            "snapshot_path": "/irrelevant",
-            "accounts": [{"label": "alpha", "login": 1, "server": "X"}],
-        }
-    )
-    with pytest.raises(RuntimeError, match="Investor password not found in keyring"):
+    with (
+        patch("mt5_pnl_exporter.config.get_investor_password", return_value=None),
+        pytest.raises(RuntimeError, match="set-password"),
+    ):
         resolve_passwords(cfg)
-
-
-def test_resolve_passwords_returns_map(monkeypatch):
-    import mt5_pnl_exporter.config as config_mod
-    from mt5_pnl_exporter.config import Config, resolve_passwords
-
-    monkeypatch.setattr(config_mod, "get_investor_password", lambda login: "secret123")
-    cfg = Config.model_validate(
-        {
-            "snapshot_path": "/irrelevant",
-            "accounts": [
-                {"label": "alpha", "login": 1, "server": "X"},
-                {"label": "beta", "login": 2, "server": "X"},
-            ],
-        }
-    )
-    result = resolve_passwords(cfg)
-    assert result == {1: "secret123", 2: "secret123"}

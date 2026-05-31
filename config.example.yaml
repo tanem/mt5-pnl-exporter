@@ -1,13 +1,9 @@
-# mt5-pnl-exporter config — poll-side only.
-snapshot_path: /var/data/mt5-pnl/snapshot.json
-
-poll:
-  terminal_path: 'C:\Program Files\MetaTrader 5\terminal64.exe'
-
+snapshot_path: ~/snapshots/mt5.json
+terminal_path: C:\Program Files\MetaTrader 5\terminal64.exe
 accounts:
   - label: Trend EA
     login: 1234567
-    server: BrokerName-Real
+    server: BrokerName-Live
   - label: Scalper EA
     login: 7654321
-    server: BrokerName-Real
+    server: BrokerName-Live
