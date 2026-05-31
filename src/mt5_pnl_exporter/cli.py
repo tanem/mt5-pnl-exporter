@@ -134,8 +134,7 @@ def poll(
         snapshot.write(snap_path, snap)
         log.info(f"[poll] wrote {snap_path}  ({now.strftime('%Y-%m-%d %H:%M')})")
     finally:
-        if hasattr(src, "shutdown"):
-            src.shutdown()
+        src.shutdown()
 
     if error_count:
         raise SystemExit(1)
