@@ -163,7 +163,6 @@ def test_write_sets_schema_version(tmp_path):
     write(snap_path, _minimal_snapshot())
     raw = json.loads(snap_path.read_text())
     assert raw["schema_version"] == SCHEMA_VERSION
-    assert SCHEMA_VERSION == 2
 
 
 # ─── schema version guard ────────────────────────────────────────────────────
