@@ -5,6 +5,8 @@ from __future__ import annotations
 import logging
 from unittest.mock import patch
 
+import pytest
+
 from mt5_pnl_exporter.secrets import (
     _RedactFilter,
     get_encryption_passphrase,
@@ -128,3 +130,42 @@ def test_set_encryption_passphrase_delegates_to_keyring():
     with patch("mt5_pnl_exporter.secrets.keyring.set_password") as mock_set:
         set_encryption_passphrase("hunter2")
     mock_set.assert_called_once_with("mt5-pnl-exporter", "encryption-passphrase", "hunter2")
+
+
+def test_set_investor_password_rejects_empty():
+    """Empty password is rejected at the library boundary, before keyring is touched."""
+    with (
+        patch("mt5_pnl_exporter.secrets.keyring.set_password") as mock_set,
+        pytest.raises(ValueError, match="password cannot be empty"),
+    ):
+        set_investor_password(12345, "")
+    mock_set.assert_not_called()
+
+
+def test_set_encryption_passphrase_rejects_empty():
+    """Empty passphrase is rejected at the library boundary, before keyring is touched."""
+    with (
+        patch("mt5_pnl_exporter.secrets.keyring.set_password") as mock_set,
+        pytest.raises(ValueError, match="passphrase cannot be empty"),
+    ):
+        set_encryption_passphrase("")
+    mock_set.assert_not_called()
+
+
+def test_scrub_returns_input_unchanged_with_no_secrets():
+    """No registered secrets → scrub is a no-op."""
+    filt = _RedactFilter()
+    assert filt.scrub("hello world") == "hello world"
+
+
+def test_scrub_replaces_single_registered_secret():
+    filt = _RedactFilter()
+    filt.register("pw123")
+    assert filt.scrub("hello pw123 world") == "hello *** world"
+
+
+def test_scrub_handles_multiple_registered_secrets():
+    filt = _RedactFilter()
+    filt.register("pw123")
+    filt.register("alpha")
+    assert filt.scrub("alpha and pw123") == "*** and ***"
