@@ -1,14 +1,29 @@
-"""Snapshot read/write — atomic temp+rename so a reader never sees a partial file."""
+"""Snapshot read/write — gzip + age pipeline, atomic temp+rename on write.
+
+Pipeline (left-to-right on write, right-to-left on read):
+
+    Snapshot model → JSON bytes → gzip → age (passphrase) → file
+
+The file convention is `snapshot.json.gz.age`. Consumers must implement
+the same pipeline in reverse to read it.
+"""
 
 from __future__ import annotations
 
+import gzip
 import json
 from pathlib import Path
 from typing import Literal
 
+import pyrage
 from pydantic import BaseModel, ConfigDict
 
 SCHEMA_VERSION = 2
+
+_MISSING_PASSPHRASE_MSG = (
+    "no encryption passphrase set in keychain.\n"
+    "Run 'mt5-pnl-exporter set-encryption-passphrase' first."
+)
 
 
 class AccountSnapshot(BaseModel):
@@ -113,28 +128,43 @@ class Snapshot(BaseModel):
     cash_flows: list[CashFlow]
 
 
-def write(path: Path, snap: Snapshot) -> None:
+def write(path: Path, snap: Snapshot, passphrase: str) -> None:
+    if not passphrase:
+        raise RuntimeError(_MISSING_PASSPHRASE_MSG)
+    data = snap.model_dump_json(indent=2).encode()
+    compressed = gzip.compress(data, compresslevel=9)
+    encrypted = pyrage.passphrase.encrypt(compressed, passphrase)
     tmp = path.with_suffix(".tmp")
-    tmp.write_text(snap.model_dump_json(indent=2))
+    tmp.write_bytes(encrypted)
     tmp.replace(path)
 
 
-def read(path: Path) -> Snapshot:
+def read(path: Path, passphrase: str | None) -> Snapshot:
+    if not passphrase:
+        raise RuntimeError(_MISSING_PASSPHRASE_MSG)
     if not path.exists():
         raise FileNotFoundError(
             f"Snapshot not found: {path}\n"
             "Run 'mt5-pnl-exporter poll' on the Windows host first to generate it."
         )
+    encrypted = path.read_bytes()
     try:
-        data = json.loads(path.read_text())
+        compressed = pyrage.passphrase.decrypt(encrypted, passphrase)
+        data = gzip.decompress(compressed)
+    except (pyrage.DecryptError, OSError, EOFError, gzip.BadGzipFile) as exc:
+        raise ValueError(
+            f"Snapshot at {path} could not be decrypted — wrong passphrase or corrupt file."
+        ) from exc
+    try:
+        raw = json.loads(data)
     except json.JSONDecodeError as exc:
         raise ValueError(
             f"Snapshot file is corrupt at {path}; re-run 'mt5-pnl-exporter poll' to regenerate."
         ) from exc
-    version = data.get("schema_version", 0)
+    version = raw.get("schema_version", 0)
     if version != SCHEMA_VERSION:
         raise ValueError(
             f"Snapshot schema_version {version} != expected {SCHEMA_VERSION}. "
             "Re-run 'mt5-pnl-exporter poll' to regenerate."
         )
-    return Snapshot.model_validate(data)
+    return Snapshot.model_validate(raw)
