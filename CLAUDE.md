@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 MT5 P&L exporter: a `uv`-managed Python 3.12 CLI (`mt5-pnl-exporter`) that polls
-MT5 deal history on a Windows VPS and writes `snapshot.json`. The schema lives
+MT5 deal history on the Windows host where MT5 runs and writes `snapshot.json`. The schema lives
 in `schema/snapshot.schema.json`; consumers (CLI, UI) read the snapshot against
 the schema. See [`docs/superpowers/specs/2026-05-31-repo-split-design.md`](docs/superpowers/specs/2026-05-31-repo-split-design.md)
 for the contract.
@@ -10,7 +10,7 @@ for the contract.
 
 ```bash
 uv sync                                # install dev deps
-uv sync --extra mt5                    # VPS: also install MetaTrader5
+uv sync --extra mt5                    # Windows host: also install MetaTrader5
 uv run pytest                          # tests (coverage ≥95%; schema staleness check included)
 uv run mt5-pnl-exporter set-encryption-passphrase  # set passphrase used for snapshot encryption
 uv run mt5-pnl-exporter poll                   # run a real poll (Windows + creds)
@@ -32,7 +32,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 ## Gotchas
 
 - **Never import `MetaTrader5` at module level.** It is deferred inside `MT5Source` (sources/mt5.py).
-- **Investor passwords only**, stored in the VPS keychain via `keyring`. `redact_filter` (secrets.py) strips them from logs. The `config.yaml` perms check (`check_file_perms`) is enforced by `poll` only.
+- **Investor passwords only**, stored in the OS keychain via `keyring` on the Windows host. `redact_filter` (secrets.py) strips them from logs. The `config.yaml` perms check (`check_file_perms`) is enforced by `poll` only.
 - **Snapshot is mandatorily age-encrypted** with a keychain-stored passphrase (account `encryption-passphrase` on `KEYRING_SERVICE`). `snapshot.read()` and `snapshot.write()` both require the passphrase; `poll` refuses to run if it's unset (`set-encryption-passphrase` first). Consumers must reverse the same `gzip → age` pipeline.
 - **A dedicated MT5 terminal is required**: `mt5.login()` switches the terminal's active account, so pointing it at an EA terminal logs the EA out.
 - **MT5 history sync is async.** `_get_history_raw()` waits for `history_deals_total(from, to)` to stabilise before calling `history_deals_get()`.
