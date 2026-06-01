@@ -5,7 +5,13 @@ from __future__ import annotations
 import logging
 from unittest.mock import patch
 
-from mt5_pnl_exporter.secrets import _RedactFilter, get_investor_password, set_investor_password
+from mt5_pnl_exporter.secrets import (
+    _RedactFilter,
+    get_encryption_passphrase,
+    get_investor_password,
+    set_encryption_passphrase,
+    set_investor_password,
+)
 
 
 def _make_logger(name: str = "test") -> tuple[logging.Logger, list[logging.LogRecord]]:
@@ -104,3 +110,21 @@ def test_redact_filter_empty_secret_not_registered():
     )
     filt.filter(record)
     assert record.getMessage() == "hello world"
+
+
+def test_get_encryption_passphrase_delegates_to_keyring():
+    with patch("mt5_pnl_exporter.secrets.keyring.get_password", return_value="hunter2") as mock_get:
+        result = get_encryption_passphrase()
+    mock_get.assert_called_once_with("mt5-pnl-exporter", "encryption-passphrase")
+    assert result == "hunter2"
+
+
+def test_get_encryption_passphrase_returns_none_when_unset():
+    with patch("mt5_pnl_exporter.secrets.keyring.get_password", return_value=None):
+        assert get_encryption_passphrase() is None
+
+
+def test_set_encryption_passphrase_delegates_to_keyring():
+    with patch("mt5_pnl_exporter.secrets.keyring.set_password") as mock_set:
+        set_encryption_passphrase("hunter2")
+    mock_set.assert_called_once_with("mt5-pnl-exporter", "encryption-passphrase", "hunter2")
