@@ -249,6 +249,8 @@ encryption. JSON with repetitive field names compresses 5–10×, so a
 350 MB snapshot becomes ~35 MB. Cycle 1 leaves this for cycle 2 to
 settle — flagged here so it doesn't get lost.
 
+> **Update:** implemented in cycle 2 — see [cycle 2 spec](../specs/2026-06-01-phase-1b-cycle-2-design.md).
+
 A `history_days` truncation knob is a 1.x option if compression turns
 out to be insufficient. Not in scope for this cycle.
 

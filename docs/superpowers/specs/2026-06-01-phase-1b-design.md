@@ -37,7 +37,7 @@ Nine items, grouped into four cycles (see *Cycle decomposition* below):
 4. Tests restructured around snapshot + sources (was: aggregate-focused).
 5. Config flatten — drop the `poll:` role-scoping wrapper now that there is
    no `query:` side.
-6. Mandatory age encryption of `snapshot.json.age` with a passphrase,
+6. Mandatory age encryption of `snapshot.json.gz.age` with a passphrase,
    keychain-stored.
 7. Docs reframe — replace VPS framing with "Windows host with MT5"; add a
    *Threat model* section to README.
@@ -80,7 +80,7 @@ list settled in cycle 1.
 
 ## Mandatory age encryption
 
-The exporter writes `snapshot.json.age` — an age-encrypted blob containing
+The exporter writes `snapshot.json.gz.age` — an age-encrypted blob containing
 the JSON snapshot. [age](https://age-encryption.org) is a small, modern,
 well-spec'd file-encryption format with multiple independent implementations
 (Go canonical, Rust, JS).
@@ -92,9 +92,9 @@ logs.
 
 **Producer flow.** Exporter builds `Snapshot` → serialises to JSON in memory
 → reads passphrase from keychain → age-encrypts (scrypt-derived key) →
-atomically writes `snapshot.json.age` (temp file + replace).
+atomically writes `snapshot.json.gz.age` (temp file + replace).
 
-**Consumer flow.** Reader opens `snapshot.json.age` → reads passphrase from
+**Consumer flow.** Reader opens `snapshot.json.gz.age` → reads passphrase from
 local keychain → decrypts in memory → existing schema-version check +
 `Snapshot.model_validate` against the decrypted JSON.
 
