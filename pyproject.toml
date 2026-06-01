@@ -76,5 +76,9 @@ module = "MetaTrader5"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "pyrage"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "mt5_pnl_exporter.cli"
 disallow_untyped_decorators = false
