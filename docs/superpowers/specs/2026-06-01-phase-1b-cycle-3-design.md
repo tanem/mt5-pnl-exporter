@@ -118,6 +118,7 @@ unredacted. Findings are listed below the table with patch references."
 **Table columns.**
 
 | Site (file:lineish) | Secret | Direction | Never on disk | Never in logs | Past redact boundary |
+| --- | --- | --- | --- | --- | --- |
 
 **Rows — six secret-touching sites:**
 
