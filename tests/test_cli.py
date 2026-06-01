@@ -105,9 +105,12 @@ def _fake_from_sample() -> _FakeSource:
     )
 
 
+TEST_PASSPHRASE = "test-passphrase"
+
+
 @pytest.fixture
 def install_fake(monkeypatch):
-    """Returns a factory: install_fake(fake) replaces MT5Source in cli."""
+    """Returns a factory: install_fake(fake) replaces MT5Source + secrets in cli."""
 
     def _install(fake: _FakeSource) -> _FakeSource:
         monkeypatch.setattr(
@@ -118,6 +121,11 @@ def install_fake(monkeypatch):
         monkeypatch.setattr(
             "mt5_pnl_exporter.cli.resolve_passwords",
             lambda cfg: {a.login: "pw" for a in cfg.accounts},
+        )
+        # encryption passphrase would hit the keychain too
+        monkeypatch.setattr(
+            "mt5_pnl_exporter.cli.get_encryption_passphrase",
+            lambda: TEST_PASSPHRASE,
         )
         return fake
 
@@ -145,7 +153,7 @@ def _write_cfg(path: Path, snapshot_path: str, accounts: list[tuple[str, int]]) 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX perms only")
 def test_poll_warns_on_world_readable_config(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
-    _write_cfg(cfg_path, str(tmp_path / "snapshot.json"), [("Trend EA", 1234567)])
+    _write_cfg(cfg_path, str(tmp_path / "snapshot.json.gz.age"), [("Trend EA", 1234567)])
     os.chmod(cfg_path, 0o644)
     install_fake(_fake_from_sample())
     result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
@@ -157,7 +165,7 @@ def test_poll_warns_on_world_readable_config(tmp_path, install_fake):
 
 def test_poll_writes_snapshot_with_all_record_types(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
-    snap_path = tmp_path / "snapshot.json"
+    snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567), ("Scalper EA", 7654321)])
     os.chmod(cfg_path, 0o600)
     install_fake(_fake_from_sample())
@@ -165,7 +173,7 @@ def test_poll_writes_snapshot_with_all_record_types(tmp_path, install_fake):
     result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
     assert result.exit_code == 0, result.output
 
-    snap = snapshot.read(snap_path)
+    snap = snapshot.read(snap_path, TEST_PASSPHRASE)
     assert snap.schema_version == 2
     assert {a.login for a in snap.accounts} == {1234567, 7654321}
     assert len(snap.closed_deals) == 5
@@ -179,7 +187,7 @@ def test_poll_writes_snapshot_with_all_record_types(tmp_path, install_fake):
 def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
     """Failing account keeps last_success from prior; succeeding account updates it."""
     cfg_path = tmp_path / "config.yaml"
-    snap_path = tmp_path / "snapshot.json"
+    snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567), ("Bad", 99998)])
     os.chmod(cfg_path, 0o600)
 
@@ -212,6 +220,7 @@ def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
             open_positions=[],
             cash_flows=[],
         ),
+        TEST_PASSPHRASE,
     )
 
     fake = _fake_from_sample()
@@ -221,7 +230,7 @@ def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
     result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
     assert result.exit_code == 1
 
-    snap = snapshot.read(snap_path)
+    snap = snapshot.read(snap_path, TEST_PASSPHRASE)
     by_login = {a.login: a for a in snap.accounts}
 
     known = by_login[1234567]
@@ -236,7 +245,7 @@ def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
 
 def test_poll_keeps_prior_snapshot_when_all_fail(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
-    snap_path = tmp_path / "snapshot.json"
+    snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Bad", 99998)])
     os.chmod(cfg_path, 0o600)
 
@@ -260,20 +269,21 @@ def test_poll_keeps_prior_snapshot_when_all_fail(tmp_path, install_fake):
             open_positions=[],
             cash_flows=[],
         ),
+        TEST_PASSPHRASE,
     )
-    prior_text = snap_path.read_text()
+    prior_bytes = snap_path.read_bytes()
 
     fake = _FakeSource(fail_logins={99998})
     install_fake(fake)
 
     result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
     assert result.exit_code == 1
-    assert snap_path.read_text() == prior_text
+    assert snap_path.read_bytes() == prior_bytes
 
 
 def test_poll_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
-    snap_path = tmp_path / "snapshot.json"
+    snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Bad", 99998)])
     os.chmod(cfg_path, 0o600)
 
@@ -283,7 +293,7 @@ def test_poll_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
     result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
     assert result.exit_code == 1
     assert snap_path.exists()
-    snap = snapshot.read(snap_path)
+    snap = snapshot.read(snap_path, TEST_PASSPHRASE)
     assert len(snap.accounts) == 1
     assert snap.accounts[0].last_error is not None
     assert snap.accounts[0].last_success is None
@@ -303,7 +313,7 @@ def test_poll_config_not_found(tmp_path):
 
 def test_poll_shutdown_called_on_source(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
-    snap_path = tmp_path / "snapshot.json"
+    snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567)])
     os.chmod(cfg_path, 0o600)
 
@@ -334,3 +344,64 @@ def test_set_password_stores_password(monkeypatch):
     result = runner.invoke(app, ["set-password", "1234567"], input="s3cr3t\n")
     assert result.exit_code == 0, result.output
     assert stored.get(1234567) == "s3cr3t"
+
+
+# ─── poll missing encryption passphrase ──────────────────────────────────────
+
+
+def test_poll_exits_when_encryption_passphrase_missing(tmp_path, monkeypatch):
+    """Missing passphrase: exit 1 with the documented message, no MT5 call."""
+    cfg_path = tmp_path / "config.yaml"
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567)])
+    os.chmod(cfg_path, 0o600)
+
+    fake = _fake_from_sample()
+    monkeypatch.setattr("mt5_pnl_exporter.cli.MT5Source", lambda *a, **kw: fake)
+    monkeypatch.setattr(
+        "mt5_pnl_exporter.cli.resolve_passwords",
+        lambda cfg: {a.login: "pw" for a in cfg.accounts},
+    )
+    monkeypatch.setattr(
+        "mt5_pnl_exporter.cli.get_encryption_passphrase",
+        lambda: None,
+    )
+
+    # Spy: assertion = the fake's account_info was never called.
+    calls: list[int] = []
+    original = fake.account_info
+    fake.account_info = lambda login: (calls.append(login), original(login))[1]  # type: ignore[assignment]
+
+    result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
+    assert result.exit_code == 1
+    assert "no encryption passphrase set in keychain" in result.output
+    assert "mt5-pnl-exporter set-encryption-passphrase" in result.output
+    assert calls == []
+    assert not snap_path.exists()
+
+
+# ─── set-encryption-passphrase ───────────────────────────────────────────────
+
+
+def test_set_encryption_passphrase_empty_exits_nonzero():
+    result = runner.invoke(app, ["set-encryption-passphrase"], input="\n\n")
+    assert result.exit_code != 0
+    assert "empty" in result.output.lower()
+
+
+def test_set_encryption_passphrase_mismatch_exits_nonzero():
+    result = runner.invoke(app, ["set-encryption-passphrase"], input="hunter2\ndifferent\n")
+    assert result.exit_code != 0
+    assert "match" in result.output.lower()
+
+
+def test_set_encryption_passphrase_stores_on_success(monkeypatch):
+    stored: dict[str, str] = {}
+
+    def fake_set(passphrase: str) -> None:
+        stored["pw"] = passphrase
+
+    monkeypatch.setattr("mt5_pnl_exporter.cli.set_encryption_passphrase", fake_set)
+    result = runner.invoke(app, ["set-encryption-passphrase"], input="hunter2\nhunter2\n")
+    assert result.exit_code == 0, result.output
+    assert stored.get("pw") == "hunter2"
