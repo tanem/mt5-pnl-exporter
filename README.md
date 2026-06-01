@@ -25,7 +25,7 @@ mt5-pnl-exporter poll                        # writes snapshot.json.gz.age
 
 ## Commands
 
-- `mt5-pnl-exporter poll` — fetch deals from MT5 and write `snapshot.json` atomically.
+- `mt5-pnl-exporter poll` — fetch deals from MT5 and write `snapshot.json.gz.age` atomically.
 - `mt5-pnl-exporter set-password <login>` — store an investor password in the OS keychain (`keyring`).
 - `mt5-pnl-exporter set-encryption-passphrase` — store the snapshot encryption passphrase in the OS keychain (entered twice).
 - `mt5-pnl-exporter schema` — regenerate `schema/snapshot.schema.json` from the pydantic `Snapshot` model.
