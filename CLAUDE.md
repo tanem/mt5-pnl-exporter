@@ -12,6 +12,7 @@ for the contract.
 uv sync                                # install dev deps
 uv sync --extra mt5                    # VPS: also install MetaTrader5
 uv run pytest                          # tests (coverage ≥95%; schema staleness check included)
+uv run mt5-pnl-exporter set-encryption-passphrase  # set passphrase used for snapshot encryption
 uv run mt5-pnl-exporter poll                   # run a real poll (Windows + creds)
 uv run mt5-pnl-exporter schema         # regenerate schema/snapshot.schema.json
 uv run ruff check src/ tests/
@@ -21,9 +22,9 @@ uv run pre-commit install              # gitleaks secret-scan hook
 
 ## Architecture
 
-- `cli.py` — Typer app; commands: `poll`, `set-password`, `schema`.
+- `cli.py` — Typer app; commands: `poll`, `set-password`, `set-encryption-passphrase`, `schema`.
 - `sources/` — `DataSource` protocol (`base.py`); `MT5Source` (live, Windows only) is the sole implementation.
-- `snapshot.py` — typed pydantic models for `AccountSnapshot`, `ClosedDeal`, `OpenPosition`, `CashFlow` + atomic `write` (temp file + `replace`). `read()` rejects mismatched `SCHEMA_VERSION` (currently `2`). One record per closed deal, position, and cash flow — no pre-aggregation.
+- `snapshot.py` — typed pydantic models for `AccountSnapshot`, `ClosedDeal`, `OpenPosition`, `CashFlow` + atomic `write` (temp file + `replace`). `write` and `read` chain `JSON → gzip → age (passphrase)` on disk; both take the passphrase as a required argument. `read()` rejects mismatched `SCHEMA_VERSION` (currently `2`). One record per closed deal, position, and cash flow — no pre-aggregation.
 - `config.py` — pydantic models + YAML loader. Flat shape: `snapshot_path`, `terminal_path`, `accounts` at the top level.
 - `secrets.py` — keyring access and log redaction.
 - `schema/snapshot.schema.json` — generated from the pydantic `Snapshot` model. `tests/test_schema_file.py` fails CI if it drifts.
@@ -32,6 +33,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 
 - **Never import `MetaTrader5` at module level.** It is deferred inside `MT5Source` (sources/mt5.py).
 - **Investor passwords only**, stored in the VPS keychain via `keyring`. `redact_filter` (secrets.py) strips them from logs. The `config.yaml` perms check (`check_file_perms`) is enforced by `poll` only.
+- **Snapshot is mandatorily age-encrypted** with a keychain-stored passphrase (account `encryption-passphrase` on `KEYRING_SERVICE`). `snapshot.read()` and `snapshot.write()` both require the passphrase; `poll` refuses to run if it's unset (`set-encryption-passphrase` first). Consumers must reverse the same `gzip → age` pipeline.
 - **A dedicated MT5 terminal is required**: `mt5.login()` switches the terminal's active account, so pointing it at an EA terminal logs the EA out.
 - **MT5 history sync is async.** `_get_history_raw()` waits for `history_deals_total(from, to)` to stabilise before calling `history_deals_get()`.
 - **Deal classification**: `MT5Source.fetch_closed_deals` keeps only `DEAL_ENTRY_OUT`/`INOUT` records with non-balance-family types. `fetch_cash_flows` keeps only balance-family types (`BALANCE`, `CREDIT`, `CHARGE`, `CORRECTION`, `BONUS`, `COMMISSION`). `_get_history_raw` memoises `history_deals_get` per `(login, date_from, date_to)` so the two fetchers share one round-trip to MT5.

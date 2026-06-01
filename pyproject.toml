@@ -12,6 +12,7 @@ dependencies = [
     "pydantic>=2",
     "pyyaml>=6",
     "keyring>=25",
+    "pyrage>=1.2",
 ]
 
 [project.optional-dependencies]
@@ -72,6 +73,10 @@ files = ["src/mt5_pnl_exporter"]
 
 [[tool.mypy.overrides]]
 module = "MetaTrader5"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pyrage"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

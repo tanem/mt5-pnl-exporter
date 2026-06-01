@@ -14,7 +14,12 @@ from rich.console import Console
 
 from mt5_pnl_exporter import snapshot
 from mt5_pnl_exporter.config import check_file_perms, load_config, resolve_passwords
-from mt5_pnl_exporter.secrets import redact_filter, set_investor_password
+from mt5_pnl_exporter.secrets import (
+    get_encryption_passphrase,
+    redact_filter,
+    set_encryption_passphrase,
+    set_investor_password,
+)
 from mt5_pnl_exporter.snapshot import (
     AccountSnapshot,
     CashFlow,
@@ -25,7 +30,7 @@ from mt5_pnl_exporter.snapshot import (
 from mt5_pnl_exporter.sources.mt5 import MT5Source
 
 app = typer.Typer(
-    help="MT5 P&L exporter — poll deal history, write snapshot.json.",
+    help="MT5 P&L exporter — poll deal history, write snapshot.json.gz.age.",
     add_completion=False,
 )
 err = Console(stderr=True)
@@ -43,12 +48,22 @@ def poll(
     config_path: Annotated[Path | None, typer.Option("--config", "-c")] = None,
     verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
 ) -> None:
-    """Fetch deal history + open positions from MT5 and write snapshot.json."""
+    """Fetch deal history + open positions from MT5 and write snapshot.json.gz.age."""
     _setup_logging(verbose)
     log = logging.getLogger(__name__)
 
     check_file_perms(config_path or Path("config.yaml"))
     cfg = load_config(config_path)
+
+    encryption_passphrase = get_encryption_passphrase()
+    if not encryption_passphrase:
+        err.print(
+            "[red]Error: no encryption passphrase set in keychain.[/red]\n"
+            "Run 'mt5-pnl-exporter set-encryption-passphrase' first."
+        )
+        raise SystemExit(1)
+    redact_filter.register(encryption_passphrase)
+
     snap_path = Path(cfg.snapshot_path)
     snap_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -62,7 +77,7 @@ def poll(
 
     prior_by_login: dict[int, AccountSnapshot] = {}
     try:
-        prior = snapshot.read(snap_path)
+        prior = snapshot.read(snap_path, encryption_passphrase)
         prior_by_login = {a.login: a for a in prior.accounts}
     except FileNotFoundError:
         pass
@@ -131,7 +146,7 @@ def poll(
             open_positions=open_positions_out,
             cash_flows=cash_flows_out,
         )
-        snapshot.write(snap_path, snap)
+        snapshot.write(snap_path, snap, encryption_passphrase)
         log.info(f"[poll] wrote {snap_path}  ({now.strftime('%Y-%m-%d %H:%M')})")
     finally:
         src.shutdown()
@@ -153,6 +168,23 @@ def set_password(
         raise SystemExit(1)
     set_investor_password(login, pw)
     err.print(f"[green]Password stored in keychain for login {login}.[/green]")
+
+
+@app.command("set-encryption-passphrase")
+def set_encryption_passphrase_cmd() -> None:
+    """Store the snapshot encryption passphrase in the OS keychain (entered twice)."""
+    import getpass
+
+    pw = getpass.getpass("Encryption passphrase: ")
+    if not pw:
+        err.print("[red]Passphrase cannot be empty.[/red]")
+        raise SystemExit(1)
+    confirm = getpass.getpass("Confirm passphrase: ")
+    if pw != confirm:
+        err.print("[red]Passphrases do not match.[/red]")
+        raise SystemExit(1)
+    set_encryption_passphrase(pw)
+    err.print("[green]Encryption passphrase stored in keychain.[/green]")
 
 
 @app.command()
