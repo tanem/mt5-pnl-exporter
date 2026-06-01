@@ -209,6 +209,12 @@ def test_read_none_passphrase_raises_runtime_error(tmp_path):
         read(snap_path, None)  # type: ignore[arg-type]
 
 
+def test_write_empty_passphrase_raises_runtime_error(tmp_path):
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    with pytest.raises(RuntimeError, match="no encryption passphrase set in keychain"):
+        write(snap_path, _minimal_snapshot(), "")
+
+
 # ─── schema-version guard (still runs on the decrypted JSON) ─────────────────
 
 
@@ -243,6 +249,16 @@ def test_read_rejects_missing_schema_version_after_decrypt(tmp_path):
     encrypted = pyrage.passphrase.encrypt(gzip.compress(raw), PASSPHRASE)
     snap_path.write_bytes(encrypted)
     with pytest.raises(ValueError, match="schema_version"):
+        read(snap_path, PASSPHRASE)
+
+
+def test_read_corrupt_json_after_decrypt_raises_value_error(tmp_path):
+    """gzip decompresses successfully but the inner bytes are not valid JSON."""
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    valid_gzip_bad_json = gzip.compress(b"{this is not json")
+    encrypted = pyrage.passphrase.encrypt(valid_gzip_bad_json, PASSPHRASE)
+    snap_path.write_bytes(encrypted)
+    with pytest.raises(ValueError, match="corrupt"):
         read(snap_path, PASSPHRASE)
 
 

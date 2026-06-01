@@ -30,7 +30,7 @@ from mt5_pnl_exporter.snapshot import (
 from mt5_pnl_exporter.sources.mt5 import MT5Source
 
 app = typer.Typer(
-    help="MT5 P&L exporter — poll deal history, write snapshot.json.",
+    help="MT5 P&L exporter — poll deal history, write snapshot.json.gz.age.",
     add_completion=False,
 )
 err = Console(stderr=True)
@@ -48,7 +48,7 @@ def poll(
     config_path: Annotated[Path | None, typer.Option("--config", "-c")] = None,
     verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
 ) -> None:
-    """Fetch deal history + open positions from MT5 and write snapshot.json."""
+    """Fetch deal history + open positions from MT5 and write snapshot.json.gz.age."""
     _setup_logging(verbose)
     log = logging.getLogger(__name__)
 
