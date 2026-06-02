@@ -24,7 +24,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 
 - `cli.py` — Typer app; commands: `poll`, `set-password`, `set-encryption-passphrase`, `schema`.
 - `sources/` — `DataSource` protocol (`base.py`); `MT5Source` (live, Windows only) is the sole implementation.
-- `snapshot.py` — typed pydantic models for `AccountSnapshot`, `ClosedDeal`, `OpenPosition`, `CashFlow` + atomic `write` (temp file + `replace`). `write` and `read` chain `JSON → gzip → age (passphrase)` on disk; both take the passphrase as a required argument. `read()` rejects mismatched `SCHEMA_VERSION` (currently `2`). One record per closed deal, position, and cash flow — no pre-aggregation.
+- `snapshot.py` — typed pydantic models for `AccountSnapshot`, `ClosedDeal`, `OpenPosition`, `CashFlow` + atomic `write` (temp file + `replace`). `write` and `read` chain `JSON → gzip → age (passphrase)` on disk; both take the passphrase as a required argument. `read()` accepts same-major snapshots up to its own minor (currently `"1.0"`); rejects others with a readable error. One record per closed deal, position, and cash flow — no pre-aggregation.
 - `config.py` — pydantic models + YAML loader. Flat shape: `snapshot_path`, `terminal_path`, `accounts` at the top level.
 - `secrets.py` — keyring access and log redaction.
 - `schema/snapshot.schema.json` — generated from the pydantic `Snapshot` model. `tests/test_schema_file.py` fails CI if it drifts.
@@ -38,7 +38,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 - **MT5 history sync is async.** `_get_history_raw()` waits for `history_deals_total(from, to)` to stabilise before calling `history_deals_get()`.
 - **Deal classification**: `MT5Source.fetch_closed_deals` keeps only `DEAL_ENTRY_OUT`/`INOUT` records with non-balance-family types. `fetch_cash_flows` keeps only balance-family types (`BALANCE`, `CREDIT`, `CHARGE`, `CORRECTION`, `BONUS`, `COMMISSION`). `_get_history_raw` memoises `history_deals_get` per `(login, date_from, date_to)` so the two fetchers share one round-trip to MT5.
 - **Regenerate the schema after model changes**: `uv run mt5-pnl-exporter schema`. `tests/test_schema_file.py` catches missed regenerations.
-- **`SCHEMA_VERSION` is `2`** (plain integer). Major.minor versioning lands in Phase 1b cycle 4.
+- **`SCHEMA_VERSION` is `"1.0"`** (major.minor string). `read()` accepts the same major up to its own minor; bump the minor for additive fields, the major for breaking changes.
 
 ## Conventions
 
