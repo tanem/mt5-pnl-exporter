@@ -105,7 +105,8 @@ requires-python = ">=3.12"
 
 Three edits: `version` bump, `description` drops "Windows VPS" framing,
 new `readme = "README.md"` line so PyPI renders the README on the
-project page. Everything else (`license =`, `[project.urls]`,
+project page. `authors` stays as-is (matches the LICENSE and the
+existing git author). Everything else (`license =`, `[project.urls]`,
 `classifiers = [...]`) lands in the follow-up PR alongside the GHA
 publish workflow — see below.
 
@@ -181,12 +182,41 @@ Branch `phase-1b-cycle-4` from `main` (currently `2bab5dd` — the
 cycle 3 merge). No direct pushes to `main`. The cycle 4 PR is **code
 only**: the schema/version code, the pyproject bump, tests, and docs.
 
-Plan ends with: commit straggling changes → push branch → open draft
-PR.
+Plan ends with: commit straggling changes → push branch → open PR
+(regular, not draft — opens it ready for review immediately).
 
-## Post-merge steps (manual, gated by the human)
+## Next: cycle 5 (pre-publish docs polish)
 
-After the cycle 4 PR merges:
+Cycle 4 leaves the schema and the package ready, but not the public
+face. Before the tag and the first PyPI publish, a separate cycle 5 PR
+lands README/docs polish targeted at first-time readers landing on the
+PyPI page or the GitHub repo.
+
+Scope for cycle 5 is **deferred to its own brainstorm**, run after this
+cycle merges. The trigger is "the cycle 4 PR is on `main`, the package
+metadata is settled, time to look at the docs with fresh eyes and
+decide what wants tightening for a 1.0 audience". Likely candidates:
+the README intro framing, examples, the `## Why` story, screenshots or
+asciinema if any. The list isn't fixed yet — that's the point of
+brainstorming cycle 5 separately.
+
+The sequence is:
+
+```
+Cycle 4 PR (this)  : version policy + code + minimal pyproject
+        ↓ merge
+Cycle 5 PR         : pre-publish README/docs polish (scope TBD)
+        ↓ merge
+manual             : git tag 1.0.0 && uv publish
+        ↓
+Follow-up PR       : GHA trusted-publish workflow + pyproject metadata
+```
+
+If cycle 5 slips, the tag and the publish wait too.
+
+## Tag and publish (after cycle 5 merges)
+
+Once both cycle 4 and cycle 5 are on `main`:
 
 ```bash
 cd /Users/tane/Code/mt5-pnl-exporter
@@ -207,7 +237,7 @@ uv publish   # reads UV_PUBLISH_TOKEN, or prompts
 ```
 
 The first PyPI publish must be manual because PyPI trusted publishing
-requires an existing project to configure against. Once `1.0` is up,
+requires an existing project to configure against. Once `1.0.0` is up,
 the follow-up below wires automation for subsequent releases.
 
 ## Follow-up after 1.0 publish (next PR, not this cycle)
