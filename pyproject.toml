@@ -1,7 +1,8 @@
 [project]
 name = "mt5-pnl-exporter"
-version = "0.1.0"
-description = "MT5 P&L exporter — polls deal history on a Windows VPS and writes snapshot.json"
+version = "1.0.0"
+description = "MT5 P&L exporter — polls deal history on the Windows host where MT5 runs and writes a typed, encrypted snapshot."
+readme = "README.md"
 authors = [
     { name = "Tane Morgan", email = "464864+tanem@users.noreply.github.com" }
 ]
