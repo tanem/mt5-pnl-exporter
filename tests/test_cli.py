@@ -174,7 +174,7 @@ def test_poll_writes_snapshot_with_all_record_types(tmp_path, install_fake):
     assert result.exit_code == 0, result.output
 
     snap = snapshot.read(snap_path, TEST_PASSPHRASE)
-    assert snap.schema_version == 2
+    assert snap.schema_version == "1.0"
     assert {a.login for a in snap.accounts} == {1234567, 7654321}
     assert len(snap.closed_deals) == 5
     assert len(snap.open_positions) == 2
@@ -194,7 +194,7 @@ def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
     snapshot.write(
         snap_path,
         Snapshot(
-            schema_version=2,
+            schema_version="1.0",
             generated_at="2025-01-01T00:00:00Z",
             accounts=[
                 AccountSnapshot(
@@ -252,7 +252,7 @@ def test_poll_keeps_prior_snapshot_when_all_fail(tmp_path, install_fake):
     snapshot.write(
         snap_path,
         Snapshot(
-            schema_version=2,
+            schema_version="1.0",
             generated_at="2025-01-01T00:00:00Z",
             accounts=[
                 AccountSnapshot(

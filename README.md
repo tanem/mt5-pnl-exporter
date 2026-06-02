@@ -46,8 +46,7 @@ credit, charge, correction, bonus, commission (`CashFlow`). Plus one
 last-success/last-error stamps. No pre-aggregation — consumers slice the
 raw records however they want.
 
-Schema version stamping is a plain integer (`SCHEMA_VERSION = 2`) in 0.x.
-`major.minor` versioning ships in the 1.0 release (Phase 1b cycle 4).
+Schema version stamping is `major.minor` (`SCHEMA_VERSION = "1.0"`). Readers accept the same major and any minor ≤ their own; minor bumps add optional fields, major bumps are breaking. Consumers vendor `schema/snapshot.schema.json` from a specific release.
 
 ## Snapshot size
 

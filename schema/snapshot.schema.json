@@ -382,9 +382,9 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": 2,
+      "const": "1.0",
       "title": "Schema Version",
-      "type": "integer"
+      "type": "string"
     },
     "generated_at": {
       "title": "Generated At",
