@@ -21,6 +21,7 @@ from mt5_pnl_exporter.secrets import (
     set_investor_password,
 )
 from mt5_pnl_exporter.snapshot import (
+    SCHEMA_VERSION,
     AccountSnapshot,
     CashFlow,
     ClosedDeal,
@@ -139,7 +140,7 @@ def poll(
             raise SystemExit(1)
 
         snap = Snapshot(
-            schema_version=2,
+            schema_version=SCHEMA_VERSION,
             generated_at=now.isoformat().replace("+00:00", "Z"),
             accounts=accounts_out,
             closed_deals=closed_deals_out,

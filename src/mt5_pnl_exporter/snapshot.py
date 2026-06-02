@@ -18,7 +18,19 @@ from typing import Literal
 import pyrage
 from pydantic import BaseModel, ConfigDict
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = "1.0"
+_MAJOR = 1
+_MINOR = 0
+
+
+def _parse_version(stamp: object) -> tuple[int, int]:
+    if not isinstance(stamp, str):
+        raise ValueError(f"schema_version must be a string like '1.0', got {stamp!r}")
+    parts = stamp.split(".")
+    if len(parts) != 2 or not all(p.isdigit() for p in parts):
+        raise ValueError(f"schema_version {stamp!r} is not in major.minor form")
+    return int(parts[0]), int(parts[1])
+
 
 _MISSING_PASSPHRASE_MSG = (
     "no encryption passphrase set in keychain.\n"
@@ -120,7 +132,7 @@ class CashFlow(BaseModel):
 
 class Snapshot(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
-    schema_version: Literal[2]
+    schema_version: Literal["1.0"]
     generated_at: str
     accounts: list[AccountSnapshot]
     closed_deals: list[ClosedDeal]
@@ -161,10 +173,11 @@ def read(path: Path, passphrase: str | None) -> Snapshot:
         raise ValueError(
             f"Snapshot file is corrupt at {path}; re-run 'mt5-pnl-exporter poll' to regenerate."
         ) from exc
-    version = raw.get("schema_version", 0)
-    if version != SCHEMA_VERSION:
+    file_major, file_minor = _parse_version(raw.get("schema_version"))
+    if file_major != _MAJOR or file_minor > _MINOR:
         raise ValueError(
-            f"Snapshot schema_version {version} != expected {SCHEMA_VERSION}. "
-            "Re-run 'mt5-pnl-exporter poll' to regenerate."
+            f"Snapshot schema_version {raw.get('schema_version')!r} is not "
+            f"supported by this reader (accepts {_MAJOR}.0–{_MAJOR}.{_MINOR}). "  # noqa: RUF001
+            "Upgrade mt5-pnl-exporter, or re-run 'poll' on a compatible host."
         )
     return Snapshot.model_validate(raw)

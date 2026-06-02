@@ -16,6 +16,7 @@ from mt5_pnl_exporter.snapshot import (
     ClosedDeal,
     OpenPosition,
     Snapshot,
+    _parse_version,
     read,
     write,
 )
@@ -110,7 +111,7 @@ def _cash_flow(ticket: int = 1, amount: float = 1000.0) -> CashFlow:
 
 def _minimal_snapshot() -> Snapshot:
     return Snapshot(
-        schema_version=2,
+        schema_version="1.0",
         generated_at="2025-01-01T00:00:00Z",
         accounts=[_account()],
         closed_deals=[_closed_deal()],
@@ -147,7 +148,7 @@ def test_write_read_roundtrip_all_record_types(tmp_path):
 def test_empty_collections_roundtrip(tmp_path):
     snap_path = tmp_path / "snapshot.json.gz.age"
     snap = Snapshot(
-        schema_version=2,
+        schema_version="1.0",
         generated_at="2025-01-01T00:00:00Z",
         accounts=[_account()],
         closed_deals=[],
@@ -219,10 +220,10 @@ def test_write_empty_passphrase_raises_runtime_error(tmp_path):
 
 
 def test_read_rejects_wrong_schema_version_after_decrypt(tmp_path):
-    """Encrypt a v999-tagged blob, read it, expect the schema_version rejection."""
+    """Encrypt a v2.0-tagged blob, read it, expect the unsupported-version rejection."""
     snap_path = tmp_path / "snapshot.json.gz.age"
     payload = {
-        "schema_version": 999,
+        "schema_version": "2.0",
         "generated_at": "2025-01-01T00:00:00Z",
         "accounts": [],
         "closed_deals": [],
@@ -232,7 +233,7 @@ def test_read_rejects_wrong_schema_version_after_decrypt(tmp_path):
     raw = json.dumps(payload).encode()
     encrypted = pyrage.passphrase.encrypt(gzip.compress(raw), PASSPHRASE)
     snap_path.write_bytes(encrypted)
-    with pytest.raises(ValueError, match="schema_version"):
+    with pytest.raises(ValueError, match="not supported"):
         read(snap_path, PASSPHRASE)
 
 
@@ -248,7 +249,7 @@ def test_read_rejects_missing_schema_version_after_decrypt(tmp_path):
     raw = json.dumps(payload).encode()
     encrypted = pyrage.passphrase.encrypt(gzip.compress(raw), PASSPHRASE)
     snap_path.write_bytes(encrypted)
-    with pytest.raises(ValueError, match="schema_version"):
+    with pytest.raises(ValueError, match="must be a string"):
         read(snap_path, PASSPHRASE)
 
 
@@ -285,7 +286,7 @@ def test_write_failure_leaves_destination_unchanged(tmp_path):
     original_bytes = snap_path.read_bytes()
 
     modified = Snapshot(
-        schema_version=2,
+        schema_version="1.0",
         generated_at="2025-06-01T00:00:00Z",
         accounts=original.accounts,
         closed_deals=original.closed_deals,
@@ -299,3 +300,63 @@ def test_write_failure_leaves_destination_unchanged(tmp_path):
         write(snap_path, modified, PASSPHRASE)
 
     assert snap_path.read_bytes() == original_bytes
+
+
+def test_parse_version_accepts_major_minor():
+    assert _parse_version("1.0") == (1, 0)
+    assert _parse_version("2.7") == (2, 7)
+
+
+def test_parse_version_rejects_non_string():
+    with pytest.raises(ValueError, match="must be a string"):
+        _parse_version(2)
+
+
+def test_parse_version_rejects_wrong_shape():
+    for bad in ("1", "1.0.0", "1.a", ""):
+        with pytest.raises(ValueError, match=r"major\.minor"):
+            _parse_version(bad)
+
+
+def test_read_rejects_future_minor(tmp_path):
+    """Stamp from a newer minor (1.1) is rejected by a 1.0 reader."""
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    payload = {
+        "schema_version": "1.1",
+        "generated_at": "2025-01-01T00:00:00Z",
+        "accounts": [],
+        "closed_deals": [],
+        "open_positions": [],
+        "cash_flows": [],
+    }
+    raw = json.dumps(payload).encode()
+    encrypted = pyrage.passphrase.encrypt(gzip.compress(raw), PASSPHRASE)
+    snap_path.write_bytes(encrypted)
+    with pytest.raises(ValueError, match="not supported"):
+        read(snap_path, PASSPHRASE)
+
+
+def test_read_rejects_future_major(tmp_path):
+    """Stamp from a newer major (2.0) is rejected by a 1.0 reader."""
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    payload = {
+        "schema_version": "2.0",
+        "generated_at": "2025-01-01T00:00:00Z",
+        "accounts": [],
+        "closed_deals": [],
+        "open_positions": [],
+        "cash_flows": [],
+    }
+    raw = json.dumps(payload).encode()
+    encrypted = pyrage.passphrase.encrypt(gzip.compress(raw), PASSPHRASE)
+    snap_path.write_bytes(encrypted)
+    with pytest.raises(ValueError, match="not supported"):
+        read(snap_path, PASSPHRASE)
+
+
+def test_read_accepts_exact_current_version(tmp_path):
+    """Sanity: a 1.0 stamp round-trips without rejection."""
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    write(snap_path, _minimal_snapshot(), PASSPHRASE)
+    result = read(snap_path, PASSPHRASE)
+    assert result.schema_version == "1.0"
