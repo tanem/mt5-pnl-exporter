@@ -23,7 +23,4 @@ Out of scope:
 
 Report privately via the Security tab — [Report a vulnerability](https://github.com/tanem/mt5-pnl-exporter/security/advisories/new). This opens a private workspace visible only to you and the maintainer.
 
-> [!NOTE]
-> **For the maintainer:** enable *Settings → Code security → Private vulnerability reporting* so the "Report a vulnerability" button appears.
-
-You will receive a response within 7 days. Once a fix is ready, we will coordinate a disclosure timeline with you before publishing.
+You will receive a response within 7 days. Once a fix is ready, I'll agree a disclosure date with you before publishing.
