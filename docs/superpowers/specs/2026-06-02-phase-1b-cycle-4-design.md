@@ -216,7 +216,7 @@ manual             : uv build && uv publish
 Follow-up PR       : GHA trusted-publish workflow + pyproject metadata
 ```
 
-If cycle 5 slips, the tag and the publish wait too.
+If cycle 5 or cycle 6 slips, the tag and the publish wait too.
 
 ## Tag and publish (after cycle 6 merges)
 
