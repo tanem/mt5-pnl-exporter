@@ -174,7 +174,7 @@ The OS user account on the Windows host that runs the exporter is the trust boun
 
 ### Transport guidance
 
-Once the file is encrypted at rest, transport choice carries less weight than it used to. scp/rsync over SSH, a synced folder (Dropbox/Syncthing/OneDrive), or reading on the same machine are all viable. Pick whichever fits the workflow.
+The file is encrypted at rest, so transport choice is a workflow decision, not a security one. scp/rsync over SSH, a synced folder (Dropbox/Syncthing/OneDrive), or reading on the same machine are all viable. Pick whichever fits.
 
 ## Contributing
 
