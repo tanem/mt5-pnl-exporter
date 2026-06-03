@@ -203,20 +203,24 @@ brainstorming cycle 5 separately.
 The sequence is:
 
 ```
-Cycle 4 PR (this)  : version policy + code + minimal pyproject
+Cycle 4 PR         : version policy + code + minimal pyproject  ✓ merged
+        ↓
+Cycle 5 PR         : pre-publish README/docs polish
         ↓ merge
-Cycle 5 PR         : pre-publish README/docs polish (scope TBD)
+Cycle 6 PR         : codecov upload step + coverage badge
         ↓ merge
-manual             : git tag 1.0.0 && uv publish
+manual             : git tag 1.0.0 && git push --tags
+        ↓
+manual             : uv build && uv publish
         ↓
 Follow-up PR       : GHA trusted-publish workflow + pyproject metadata
 ```
 
 If cycle 5 slips, the tag and the publish wait too.
 
-## Tag and publish (after cycle 5 merges)
+## Tag and publish (after cycle 6 merges)
 
-Once both cycle 4 and cycle 5 are on `main`:
+Once cycle 4, cycle 5, and cycle 6 are all on `main`:
 
 ```bash
 cd /Users/tane/Code/mt5-pnl-exporter
