@@ -62,7 +62,7 @@ $ cp config.example.yaml config.yaml && chmod 600 config.yaml
 # edit config.yaml — snapshot_path, terminal_path, accounts
 
 $ mt5-pnl-exporter poll
-[poll] Trend EA (1234567): 12 closed deals, 0 open, 2 cash flows  OK
+[poll] Trend EA (1234567): 12 closed deals, 0 open, 0 cash flows  OK
 [poll] Scalper EA (7654321): 8 closed deals, 1 open, 2 cash flows  OK
 [poll] wrote ~/snapshots/mt5.json.gz.age  (2026-06-04 12:00)
 ```
