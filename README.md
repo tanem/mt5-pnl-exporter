@@ -62,9 +62,9 @@ $ cp config.example.yaml config.yaml && chmod 600 config.yaml
 # edit config.yaml — snapshot_path, terminal_path, accounts
 
 $ mt5-pnl-exporter poll
-[poll] Trend EA (1234567): 12 closed deals, 0 open, 0 cash flows  OK
-[poll] Scalper EA (7654321): 8 closed deals, 1 open, 2 cash flows  OK
-[poll] wrote ~/snapshots/mt5.json.gz.age  (2026-06-04 12:00)
+[INFO] [poll] Trend EA (1234567): 12 closed deals, 0 open, 0 cash flows  OK
+[INFO] [poll] Scalper EA (7654321): 8 closed deals, 1 open, 2 cash flows  OK
+[INFO] [poll] wrote ~/snapshots/mt5.json.gz.age  (2026-06-04 12:00)
 ```
 
 After decrypt + gunzip, the snapshot looks like:
@@ -130,7 +130,7 @@ accounts:
     server: BrokerName-Live
 ```
 
-Run `chmod 600 config.yaml` — `poll` refuses to run otherwise. Investor passwords and the encryption passphrase go in the OS keychain via `set-password` and `set-encryption-passphrase`, never in this file.
+On Unix hosts, run `chmod 600 config.yaml` — `poll` warns when the file is group- or world-readable. Investor passwords and the encryption passphrase go in the OS keychain via `set-password` and `set-encryption-passphrase`, never in this file.
 
 ## How it works
 
@@ -146,7 +146,7 @@ Gzip + `age` encryption is mandatory, not optional. The on-disk file is always `
 
 ## Schema
 
-`schema/snapshot.schema.json` is generated from the pydantic models and committed. CI (`tests/test_schema_file.py`) fails if it drifts. Consumers vendor the file from a specific release. The on-disk file is the schema's JSON gzipped then encrypted with [age](https://age-encryption.org/) under a passphrase from the OS keychain — consumers must reverse the same pipeline to read it.
+`schema/snapshot.schema.json` is generated from the pydantic models and committed. CI (`tests/test_schema_file.py`) fails if it drifts. The on-disk file is the schema's JSON gzipped then encrypted with [age](https://age-encryption.org/) under a passphrase from the OS keychain — consumers must reverse the same pipeline to read it.
 
 The snapshot carries one record per closed deal (`ClosedDeal`), open position (`OpenPosition`), and balance-family deal — deposit, withdrawal, credit, charge, correction, bonus, commission (`CashFlow`). Plus one `AccountSnapshot` per account with balance, equity, currency, and the last-success/last-error stamps. No pre-aggregation — consumers slice the raw records however they want.
 
