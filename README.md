@@ -3,6 +3,7 @@
 [![Licence](https://img.shields.io/github/license/tanem/mt5-pnl-exporter)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 [![tests](https://github.com/tanem/mt5-pnl-exporter/actions/workflows/ci.yml/badge.svg)](https://github.com/tanem/mt5-pnl-exporter/actions/workflows/ci.yml)
+[![coverage](https://codecov.io/gh/tanem/mt5-pnl-exporter/branch/main/graph/badge.svg)](https://codecov.io/gh/tanem/mt5-pnl-exporter)
 [![PyPI](https://img.shields.io/pypi/v/mt5-pnl-exporter)](https://pypi.org/project/mt5-pnl-exporter/)
 
 > A stable, typed, encrypted snapshot of your MT5 deal history. Build a CLI, a dashboard, a notebook, or an AI agent on top — the snapshot is the contract.
