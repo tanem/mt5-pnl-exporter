@@ -54,6 +54,7 @@ exclude_lines = [
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
     "if __name__ == .__main__.:",
+    "\\.\\.\\.$",   # Protocol method stubs ending in `...`
 ]
 
 [tool.ruff]
