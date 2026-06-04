@@ -11,7 +11,7 @@ for the contract.
 ```bash
 uv sync                                # install dev deps
 uv sync --extra mt5                    # Windows host: also install MetaTrader5
-uv run pytest                          # tests (coverage ≥95%; schema staleness check included)
+uv run pytest                          # tests (coverage = 100%; schema staleness check included)
 uv run mt5-pnl-exporter set-encryption-passphrase  # set passphrase used for snapshot encryption
 uv run mt5-pnl-exporter poll                   # run a real poll (Windows + creds)
 uv run mt5-pnl-exporter schema         # regenerate schema/snapshot.schema.json
