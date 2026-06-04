@@ -40,7 +40,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=mt5_pnl_exporter --cov-report=term-missing --cov-fail-under=95"
+addopts = "--cov=mt5_pnl_exporter --cov-report=term-missing --cov-fail-under=100"
 
 [tool.coverage.run]
 source = ["src/mt5_pnl_exporter"]
