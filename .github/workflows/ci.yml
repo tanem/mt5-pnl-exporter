@@ -21,3 +21,8 @@ jobs:
       - run: uv run mypy src/mt5_pnl_exporter
       - run: uv run pre-commit run --all-files
       - run: uv run pytest --cov-report=xml
+      - uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: tanem/mt5-pnl-exporter
+          files: ./coverage.xml
