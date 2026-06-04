@@ -31,7 +31,4 @@ uv run mt5-pnl-exporter schema
 
 ## Conventions
 
-- NZ English in comments and docs (realise, behaviour, colour).
-- Never import `MetaTrader5` at module level. Keep it deferred inside `MT5Source` (`sources/mt5.py`) so commands like `schema` work on machines without the `MetaTrader5` package installed.
-- Tests use a fake `DataSource` injected in place of `MT5Source` — never mock the `MetaTrader5` package directly.
-- After changing commands, architecture, or gotchas, update both `README.md` and `CLAUDE.md` in the same change.
+See [`CLAUDE.md`](CLAUDE.md) — the canonical reference for coding style, architectural rules, and gotchas (NZ English, no module-level `MetaTrader5` import, doc-sync rule, etc.). It's loaded automatically by Claude Code but reads as a normal project doc.
