@@ -66,7 +66,9 @@ The `MetaTrader5` rule is intentionally last: `packageRules` apply in order and 
 
 - [ ] **Step 2: Validate the config (the "test")**
 
-Run: `npx --yes renovate-config-validator renovate.json`
+Run: `npx --yes --package renovate -- renovate-config-validator renovate.json`
+
+(The `renovate-config-validator` binary ships inside the `renovate` package — it is not a standalone npm package, so `--package renovate` is required.)
 
 Expected: output ends with `INFO: Config validated successfully` and exit code 0. If it reports an unknown option or invalid preset, fix the config and re-run before proceeding.
 
@@ -231,7 +233,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 - [ ] **Step 1: Re-validate the Renovate config**
 
-Run: `npx --yes renovate-config-validator renovate.json`
+Run: `npx --yes --package renovate -- renovate-config-validator renovate.json`
 
 Expected: `Config validated successfully`, exit code 0.
 
