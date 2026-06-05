@@ -405,3 +405,30 @@ def test_set_encryption_passphrase_stores_on_success(monkeypatch):
     result = runner.invoke(app, ["set-encryption-passphrase"], input="hunter2\nhunter2\n")
     assert result.exit_code == 0, result.output
     assert stored.get("pw") == "hunter2"
+
+
+def test_schema_command_writes_json_schema(tmp_path: Path) -> None:
+    """`schema` writes the pydantic-generated JSON Schema with all top-level Snapshot fields."""
+    output = tmp_path / "snapshot.schema.json"
+
+    result = runner.invoke(app, ["schema", "--output", str(output)])
+
+    assert result.exit_code == 0, result.output
+    assert output.exists()
+    parsed = json.loads(output.read_text())
+
+    # Real schema, not stub output.
+    assert parsed.get("title") == "Snapshot"
+
+    # Every top-level Snapshot field is present. Regression-catching: if a field
+    # is renamed or dropped without regenerating the committed schema file, this
+    # fails meaningfully rather than just confirming "some JSON exists".
+    expected_fields = {
+        "schema_version",
+        "generated_at",
+        "accounts",
+        "closed_deals",
+        "open_positions",
+        "cash_flows",
+    }
+    assert expected_fields <= parsed.get("properties", {}).keys()
