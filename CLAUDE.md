@@ -39,6 +39,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 - **Deal classification**: `MT5Source.fetch_closed_deals` keeps only `DEAL_ENTRY_OUT`/`INOUT` records with non-balance-family types. `fetch_cash_flows` keeps only balance-family types (`BALANCE`, `CREDIT`, `CHARGE`, `CORRECTION`, `BONUS`, `COMMISSION`). `_get_history_raw` memoises `history_deals_get` per `(login, date_from, date_to)` so the two fetchers share one round-trip to MT5.
 - **Regenerate the schema after model changes**: `uv run mt5-pnl-exporter schema`. `tests/test_schema_file.py` catches missed regenerations.
 - **`SCHEMA_VERSION` is `"1.0"`** (major.minor string). `read()` accepts the same major up to its own minor; bump the minor for additive fields, the major for breaking changes.
+- **Dependencies are Renovate-managed; don't hand-bump them.** GitHub Actions in `.github/workflows/` are pinned to commit SHAs (with a trailing version comment) and Python deps in `pyproject.toml`/`uv.lock` are tracked by `renovate.json`. Renovate opens the update PRs (digest/minor/patch auto-merge on green CI; majors and `MetaTrader5` open a PR). Do not replace a pinned SHA with a tag or manually bump a version — it fights the bot.
 
 ## Conventions
 

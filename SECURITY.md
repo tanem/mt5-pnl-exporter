@@ -17,6 +17,12 @@ Out of scope:
 - MT5 server or broker infrastructure (not under this project's control)
 - Issues only reproducible with a non-current Python or uv version
 
+## Supply-chain controls
+
+- **GitHub Actions are pinned to commit SHAs** (not mutable tags), so a compromised or retagged action cannot inject code into CI. [Renovate](https://docs.renovatebot.com/) keeps the pins current via `helpers:pinGitHubActionDigests`.
+- **`lockFileMaintenance`** periodically refreshes `uv.lock` so transitive dependency security patches are picked up rather than pinned indefinitely.
+- Dependency update PRs (Renovate) must pass the full `tests` workflow before merging; see [`renovate.json`](renovate.json) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Reporting
 
 **Do not open a public GitHub issue for security vulnerabilities.** Public issues expose the vulnerability before a fix is available.
