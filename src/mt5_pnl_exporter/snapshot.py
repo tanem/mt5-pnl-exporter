@@ -157,7 +157,7 @@ def read(path: Path, passphrase: str | None) -> Snapshot:
     if not path.exists():
         raise FileNotFoundError(
             f"Snapshot not found: {path}\n"
-            "Run 'mt5-pnl-exporter poll' on the Windows host first to generate it."
+            "Run 'mt5-pnl-exporter export' on the Windows host first to generate it."
         )
     encrypted = path.read_bytes()
     try:
@@ -171,13 +171,13 @@ def read(path: Path, passphrase: str | None) -> Snapshot:
         raw = json.loads(data)
     except json.JSONDecodeError as exc:
         raise ValueError(
-            f"Snapshot file is corrupt at {path}; re-run 'mt5-pnl-exporter poll' to regenerate."
+            f"Snapshot file is corrupt at {path}; re-run 'mt5-pnl-exporter export' to regenerate."
         ) from exc
     file_major, file_minor = _parse_version(raw.get("schema_version"))
     if file_major != _MAJOR or file_minor > _MINOR:
         raise ValueError(
             f"Snapshot schema_version {raw.get('schema_version')!r} is not "
             f"supported by this reader (accepts {_MAJOR}.0–{_MAJOR}.{_MINOR}). "  # noqa: RUF001
-            "Upgrade mt5-pnl-exporter, or re-run 'poll' on a compatible host."
+            "Upgrade mt5-pnl-exporter, or re-run 'export' on a compatible host."
         )
     return Snapshot.model_validate(raw)

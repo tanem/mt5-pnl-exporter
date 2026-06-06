@@ -48,7 +48,7 @@ class Config(BaseModel):
 
 
 def check_file_perms(path: Path) -> None:
-    """Warn if config has group/other-readable bits. Only call from poll."""
+    """Warn if config has group/other-readable bits. Only call from export."""
     if os.name == "nt":
         return
     mode = path.stat().st_mode & 0o777

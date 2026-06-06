@@ -151,26 +151,26 @@ def _write_cfg(path: Path, snapshot_path: str, accounts: list[tuple[str, int]]) 
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX perms only")
-def test_poll_warns_on_world_readable_config(tmp_path, install_fake):
+def test_export_warns_on_world_readable_config(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
     _write_cfg(cfg_path, str(tmp_path / "snapshot.json.gz.age"), [("Trend EA", 1234567)])
     os.chmod(cfg_path, 0o644)
     install_fake(_fake_from_sample())
-    result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
     assert "chmod 600" in result.output, result.output
 
 
 # ─── poll happy path ─────────────────────────────────────────────────────────
 
 
-def test_poll_writes_snapshot_with_all_record_types(tmp_path, install_fake):
+def test_export_writes_snapshot_with_all_record_types(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
     snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567), ("Scalper EA", 7654321)])
     os.chmod(cfg_path, 0o600)
     install_fake(_fake_from_sample())
 
-    result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
     assert result.exit_code == 0, result.output
 
     snap = snapshot.read(snap_path, TEST_PASSPHRASE)
@@ -227,7 +227,7 @@ def test_export_carries_forward_last_success_at_on_failure(tmp_path, install_fak
     fake._fail = {99998}
     install_fake(fake)
 
-    result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
     assert result.exit_code == 1
 
     snap = snapshot.read(snap_path, TEST_PASSPHRASE)
@@ -243,7 +243,7 @@ def test_export_carries_forward_last_success_at_on_failure(tmp_path, install_fak
     assert bad.last_success_at == "2025-01-01T00:00:00Z"
 
 
-def test_poll_keeps_prior_snapshot_when_all_fail(tmp_path, install_fake):
+def test_export_keeps_prior_snapshot_when_all_fail(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
     snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Bad", 99998)])
@@ -276,12 +276,12 @@ def test_poll_keeps_prior_snapshot_when_all_fail(tmp_path, install_fake):
     fake = _FakeSource(fail_logins={99998})
     install_fake(fake)
 
-    result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
     assert result.exit_code == 1
     assert snap_path.read_bytes() == prior_bytes
 
 
-def test_poll_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
+def test_export_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
     snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Bad", 99998)])
@@ -290,7 +290,7 @@ def test_poll_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
     fake = _FakeSource(fail_logins={99998})
     install_fake(fake)
 
-    result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
     assert result.exit_code == 1
     assert snap_path.exists()
     snap = snapshot.read(snap_path, TEST_PASSPHRASE)
@@ -302,16 +302,16 @@ def test_poll_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
 # ─── poll --config errors ────────────────────────────────────────────────────
 
 
-def test_poll_config_not_found(tmp_path):
+def test_export_config_not_found(tmp_path):
     missing = tmp_path / "nonexistent.yaml"
-    result = runner.invoke(app, ["poll", "--config", str(missing)])
+    result = runner.invoke(app, ["export", "--config", str(missing)])
     assert result.exit_code != 0
 
 
 # ─── poll src.shutdown() path ────────────────────────────────────────────────
 
 
-def test_poll_shutdown_called_on_source(tmp_path, install_fake):
+def test_export_shutdown_called_on_source(tmp_path, install_fake):
     cfg_path = tmp_path / "config.yaml"
     snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567)])
@@ -320,7 +320,7 @@ def test_poll_shutdown_called_on_source(tmp_path, install_fake):
     fake = _fake_from_sample()
     install_fake(fake)
 
-    result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
     assert result.exit_code == 0, result.output
     assert fake.shutdown_called
 
@@ -349,7 +349,7 @@ def test_set_password_stores_password(monkeypatch):
 # ─── poll missing encryption passphrase ──────────────────────────────────────
 
 
-def test_poll_exits_when_encryption_passphrase_missing(tmp_path, monkeypatch):
+def test_export_exits_when_encryption_passphrase_missing(tmp_path, monkeypatch):
     """Missing passphrase: exit 1 with the documented message, no MT5 call."""
     cfg_path = tmp_path / "config.yaml"
     snap_path = tmp_path / "snapshot.json.gz.age"
@@ -372,7 +372,7 @@ def test_poll_exits_when_encryption_passphrase_missing(tmp_path, monkeypatch):
     original = fake.fetch_account_info
     fake.fetch_account_info = lambda login: (calls.append(login), original(login))[1]  # type: ignore[assignment]
 
-    result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
     assert result.exit_code == 1
     assert "no encryption passphrase set in keychain" in result.output
     assert "mt5-pnl-exporter set-encryption-passphrase" in result.output
