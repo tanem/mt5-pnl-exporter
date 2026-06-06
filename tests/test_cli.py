@@ -184,8 +184,8 @@ def test_poll_writes_snapshot_with_all_record_types(tmp_path, install_fake):
 # ─── poll error handling / carry-forward ─────────────────────────────────────
 
 
-def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
-    """Failing account keeps last_success from prior; succeeding account updates it."""
+def test_export_carries_forward_last_success_at_on_failure(tmp_path, install_fake):
+    """Failing account keeps last_success_at from prior; succeeding account updates it."""
     cfg_path = tmp_path / "config.yaml"
     snap_path = tmp_path / "snapshot.json.gz.age"
     _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567), ("Bad", 99998)])
@@ -203,7 +203,7 @@ def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
                     currency="USD",
                     balance=500.0,
                     equity=500.0,
-                    last_success="2025-01-01T00:00:00Z",
+                    last_success_at="2025-01-01T00:00:00Z",
                     last_error=None,
                 ),
                 AccountSnapshot(
@@ -212,7 +212,7 @@ def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
                     currency="USD",
                     balance=200.0,
                     equity=200.0,
-                    last_success="2025-01-01T00:00:00Z",
+                    last_success_at="2025-01-01T00:00:00Z",
                     last_error=None,
                 ),
             ],
@@ -235,12 +235,12 @@ def test_poll_carries_forward_last_success_on_failure(tmp_path, install_fake):
 
     known = by_login[1234567]
     assert known.last_error is None
-    assert known.last_success is not None
-    assert known.last_success != "2025-01-01T00:00:00Z"
+    assert known.last_success_at is not None
+    assert known.last_success_at != "2025-01-01T00:00:00Z"
 
     bad = by_login[99998]
     assert bad.last_error is not None
-    assert bad.last_success == "2025-01-01T00:00:00Z"
+    assert bad.last_success_at == "2025-01-01T00:00:00Z"
 
 
 def test_poll_keeps_prior_snapshot_when_all_fail(tmp_path, install_fake):
@@ -261,7 +261,7 @@ def test_poll_keeps_prior_snapshot_when_all_fail(tmp_path, install_fake):
                     currency="USD",
                     balance=100.0,
                     equity=100.0,
-                    last_success="2025-01-01T00:00:00Z",
+                    last_success_at="2025-01-01T00:00:00Z",
                     last_error=None,
                 ),
             ],
@@ -296,7 +296,7 @@ def test_poll_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
     snap = snapshot.read(snap_path, TEST_PASSPHRASE)
     assert len(snap.accounts) == 1
     assert snap.accounts[0].last_error is not None
-    assert snap.accounts[0].last_success is None
+    assert snap.accounts[0].last_success_at is None
 
 
 # ─── poll --config errors ────────────────────────────────────────────────────

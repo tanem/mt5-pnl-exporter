@@ -45,7 +45,7 @@ class AccountSnapshot(BaseModel):
     currency: str
     balance: float
     equity: float
-    last_success: str | None
+    last_success_at: str | None
     last_error: str | None
 
 

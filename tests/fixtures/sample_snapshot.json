@@ -8,7 +8,7 @@
       "currency": "USD",
       "balance": 10240.50,
       "equity": 10198.20,
-      "last_success": "2025-01-15T10:00:00Z",
+      "last_success_at": "2025-01-15T10:00:00Z",
       "last_error": null
     },
     {
@@ -17,7 +17,7 @@
       "currency": "USD",
       "balance": 8910.00,
       "equity": 8874.50,
-      "last_success": "2025-01-15T10:00:00Z",
+      "last_success_at": "2025-01-15T10:00:00Z",
       "last_error": null
     }
   ],

@@ -106,7 +106,7 @@ def poll(
                     currency=info.currency,
                     balance=info.balance,
                     equity=info.equity,
-                    last_success=now.isoformat().replace("+00:00", "Z"),
+                    last_success_at=now.isoformat().replace("+00:00", "Z"),
                     last_error=None,
                 )
             )
@@ -126,7 +126,7 @@ def poll(
                     currency=prior_acct.currency if prior_acct else "",
                     balance=prior_acct.balance if prior_acct else 0.0,
                     equity=prior_acct.equity if prior_acct else 0.0,
-                    last_success=prior_acct.last_success if prior_acct else None,
+                    last_success_at=prior_acct.last_success_at if prior_acct else None,
                     last_error=str(exc),
                 )
             )

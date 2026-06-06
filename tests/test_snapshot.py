@@ -31,7 +31,7 @@ def _account() -> AccountSnapshot:
         currency="USD",
         balance=1000.0,
         equity=1000.0,
-        last_success="2025-01-01T00:00:00Z",
+        last_success_at="2025-01-01T00:00:00Z",
         last_error=None,
     )
 
