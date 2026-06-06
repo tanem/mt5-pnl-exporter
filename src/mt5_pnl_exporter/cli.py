@@ -91,7 +91,7 @@ def poll(
 
     for acct in cfg.accounts:
         try:
-            info = src.account_info(acct.login)
+            info = src.fetch_account_info(acct.login)
             deals = src.fetch_closed_deals(acct.login, epoch_from, epoch_to)
             flows = src.fetch_cash_flows(acct.login, epoch_from, epoch_to)
             positions = src.fetch_open_positions(acct.login)

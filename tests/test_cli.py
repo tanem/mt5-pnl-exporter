@@ -56,7 +56,7 @@ class _FakeSource:
         if login in self._fail:
             raise RuntimeError(f"fake failure for login {login}")
 
-    def account_info(self, login: int) -> AccountInfo:
+    def fetch_account_info(self, login: int) -> AccountInfo:
         self._check(login)
         if login not in self._accounts:
             raise RuntimeError(f"No fake account for login {login}")
@@ -367,10 +367,10 @@ def test_poll_exits_when_encryption_passphrase_missing(tmp_path, monkeypatch):
         lambda: None,
     )
 
-    # Spy: assertion = the fake's account_info was never called.
+    # Spy: assertion = the fake's fetch_account_info was never called.
     calls: list[int] = []
-    original = fake.account_info
-    fake.account_info = lambda login: (calls.append(login), original(login))[1]  # type: ignore[assignment]
+    original = fake.fetch_account_info
+    fake.fetch_account_info = lambda login: (calls.append(login), original(login))[1]  # type: ignore[assignment]
 
     result = runner.invoke(app, ["poll", "--config", str(cfg_path)])
     assert result.exit_code == 1
