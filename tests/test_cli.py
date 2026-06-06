@@ -1,7 +1,7 @@
 """CLI-level tests — verify wiring between commands and lower-level behaviour.
 
 A small in-test fake DataSource replaces the deleted FixtureSource. It's
-monkeypatched in place of MT5Source so poll() can run without MetaTrader5
+monkeypatched in place of MT5Source so export() can run without MetaTrader5
 installed and without network/keychain access.
 """
 
@@ -160,7 +160,7 @@ def test_export_warns_on_world_readable_config(tmp_path, install_fake):
     assert "chmod 600" in result.output, result.output
 
 
-# ─── poll happy path ─────────────────────────────────────────────────────────
+# ─── export happy path ───────────────────────────────────────────────────────
 
 
 def test_export_writes_snapshot_with_all_record_types(tmp_path, install_fake):
@@ -181,7 +181,7 @@ def test_export_writes_snapshot_with_all_record_types(tmp_path, install_fake):
     assert len(snap.cash_flows) == 2
 
 
-# ─── poll error handling / carry-forward ─────────────────────────────────────
+# ─── export error handling / carry-forward ───────────────────────────────────
 
 
 def test_export_carries_forward_last_success_at_on_failure(tmp_path, install_fake):
@@ -299,7 +299,7 @@ def test_export_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
     assert snap.accounts[0].last_success_at is None
 
 
-# ─── poll --config errors ────────────────────────────────────────────────────
+# ─── export --config errors ──────────────────────────────────────────────────
 
 
 def test_export_config_not_found(tmp_path):
@@ -308,7 +308,7 @@ def test_export_config_not_found(tmp_path):
     assert result.exit_code != 0
 
 
-# ─── poll src.shutdown() path ────────────────────────────────────────────────
+# ─── export src.shutdown() path ──────────────────────────────────────────────
 
 
 def test_export_shutdown_called_on_source(tmp_path, install_fake):
@@ -325,28 +325,28 @@ def test_export_shutdown_called_on_source(tmp_path, install_fake):
     assert fake.shutdown_called
 
 
-# ─── set-password ────────────────────────────────────────────────────────────
+# ─── set-investor-password ───────────────────────────────────────────────────
 
 
-def test_set_password_empty_exits_nonzero():
-    result = runner.invoke(app, ["set-password", "1234567"], input="\n")
+def test_set_investor_password_empty_exits_nonzero():
+    result = runner.invoke(app, ["set-investor-password", "1234567"], input="\n")
     assert result.exit_code != 0
     assert "empty" in result.output.lower()
 
 
-def test_set_password_stores_password(monkeypatch):
+def test_set_investor_password_stores_password(monkeypatch):
     stored: dict[int, str] = {}
 
     def fake_set(login: int, pw: str) -> None:
         stored[login] = pw
 
     monkeypatch.setattr("mt5_pnl_exporter.cli.set_investor_password", fake_set)
-    result = runner.invoke(app, ["set-password", "1234567"], input="s3cr3t\n")
+    result = runner.invoke(app, ["set-investor-password", "1234567"], input="s3cr3t\n")
     assert result.exit_code == 0, result.output
     assert stored.get(1234567) == "s3cr3t"
 
 
-# ─── poll missing encryption passphrase ──────────────────────────────────────
+# ─── export missing encryption passphrase ────────────────────────────────────
 
 
 def test_export_exits_when_encryption_passphrase_missing(tmp_path, monkeypatch):

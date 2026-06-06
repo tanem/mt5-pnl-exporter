@@ -88,6 +88,6 @@ def resolve_passwords(cfg: Config) -> dict[int, str]:
         raise RuntimeError(
             "Investor password not found in keyring for: "
             + ", ".join(missing)
-            + "\nRun: mt5-pnl-exporter set-password <login>"
+            + "\nRun: mt5-pnl-exporter set-investor-password <login>"
         )
     return passwords

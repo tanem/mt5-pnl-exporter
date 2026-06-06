@@ -1,4 +1,4 @@
-"""mt5-pnl-exporter CLI — export | set-password | schema"""
+"""mt5-pnl-exporter CLI — export | set-investor-password | set-encryption-passphrase | schema"""
 
 from __future__ import annotations
 
@@ -156,8 +156,8 @@ def export(
         raise SystemExit(1)
 
 
-@app.command("set-password")
-def set_password(
+@app.command("set-investor-password")
+def set_investor_password_cmd(
     login: Annotated[int, typer.Argument(help="MT5 account login number")],
 ) -> None:
     """Store an investor password in the OS keychain (never echoed to terminal)."""

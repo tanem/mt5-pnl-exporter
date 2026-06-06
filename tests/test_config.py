@@ -161,6 +161,6 @@ def test_resolve_passwords_raises_when_missing():
     )
     with (
         patch("mt5_pnl_exporter.config.get_investor_password", return_value=None),
-        pytest.raises(RuntimeError, match="set-password"),
+        pytest.raises(RuntimeError, match="set-investor-password"),
     ):
         resolve_passwords(cfg)
