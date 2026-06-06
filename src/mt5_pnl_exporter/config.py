@@ -48,7 +48,7 @@ class Config(BaseModel):
 
 
 def check_file_perms(path: Path) -> None:
-    """Warn if config has group/other-readable bits. Only call from poll."""
+    """Warn if config has group/other-readable bits. Only call from export."""
     if os.name == "nt":
         return
     mode = path.stat().st_mode & 0o777
@@ -88,6 +88,6 @@ def resolve_passwords(cfg: Config) -> dict[int, str]:
         raise RuntimeError(
             "Investor password not found in keyring for: "
             + ", ".join(missing)
-            + "\nRun: mt5-pnl-exporter set-password <login>"
+            + "\nRun: mt5-pnl-exporter set-investor-password <login>"
         )
     return passwords

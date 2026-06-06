@@ -146,7 +146,7 @@ def test_initialize_passes_credentials(fake_mt5):
     from mt5_pnl_exporter.sources.mt5 import MT5Source
 
     src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-    src.account_info(514248)
+    src.fetch_account_info(514248)
 
     inits = [c for c in fake_mt5.calls if c[0] == "initialize"]
     assert len(inits) == 1
@@ -166,8 +166,8 @@ def test_initialize_called_once_second_account_uses_login(fake_mt5):
         {514248: "inv-pw-a", 999999: "inv-pw-b"},
         {514248: "BlackBull-Live", 999999: "BlackBull-Live"},
     )
-    src.account_info(514248)
-    src.account_info(999999)
+    src.fetch_account_info(514248)
+    src.fetch_account_info(999999)
 
     inits = [c for c in fake_mt5.calls if c[0] == "initialize"]
     logins = [c for c in fake_mt5.calls if c[0] == "login"]
@@ -185,7 +185,7 @@ def test_initialize_failure_surfaces_mt5_error(monkeypatch):
 
         src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
         with pytest.raises(RuntimeError, match=r"MT5 initialize failed:.*-6"):
-            src.account_info(514248)
+            src.fetch_account_info(514248)
     finally:
         sys.modules.pop("MetaTrader5", None)
 
@@ -198,7 +198,7 @@ def test_raises_when_server_missing(fake_mt5):
 
     src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {})
     with pytest.raises(RuntimeError, match="No server configured for login 514248"):
-        src.account_info(514248)
+        src.fetch_account_info(514248)
 
 
 def test_raises_when_password_missing(fake_mt5):
@@ -206,7 +206,7 @@ def test_raises_when_password_missing(fake_mt5):
 
     src = MT5Source("C:\\fake\\terminal64.exe", {}, {514248: "BlackBull-Live"})
     with pytest.raises(RuntimeError, match="No investor password for login 514248"):
-        src.account_info(514248)
+        src.fetch_account_info(514248)
 
 
 def test_login_failure_surfaces_mt5_error(monkeypatch):
@@ -219,9 +219,9 @@ def test_login_failure_surfaces_mt5_error(monkeypatch):
             {514248: "inv-pw-a", 999999: "inv-pw-b"},
             {514248: "BlackBull-Live", 999999: "BlackBull-Live"},
         )
-        src.account_info(514248)
+        src.fetch_account_info(514248)
         with pytest.raises(RuntimeError, match=r"MT5 login failed for 999999"):
-            src.account_info(999999)
+            src.fetch_account_info(999999)
     finally:
         sys.modules.pop("MetaTrader5", None)
 
@@ -628,7 +628,7 @@ def test_shutdown_clears_history_cache(fake_mt5):
 # ── account_info() None handling ─────────────────────────────────────────────
 
 
-def test_account_info_raises_when_mt5_returns_none():
+def test_fetch_account_info_raises_when_mt5_returns_none():
     fake = _install_fake_mt5()
     fake.account_info = lambda: None  # type: ignore[attr-defined]
     try:
@@ -636,7 +636,7 @@ def test_account_info_raises_when_mt5_returns_none():
 
         src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
         with pytest.raises(RuntimeError, match="account_info\\(\\) returned None for 514248"):
-            src.account_info(514248)
+            src.fetch_account_info(514248)
     finally:
         sys.modules.pop("MetaTrader5", None)
 
@@ -648,7 +648,7 @@ def test_shutdown_calls_mt5_shutdown_when_initialized(fake_mt5):
     from mt5_pnl_exporter.sources.mt5 import MT5Source
 
     src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-    src.account_info(514248)
+    src.fetch_account_info(514248)
     assert src._initialized
     src.shutdown()
     assert not src._initialized

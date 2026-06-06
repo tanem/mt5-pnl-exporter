@@ -216,7 +216,7 @@ class MT5Source:
             )
         return out
 
-    def account_info(self, login: int) -> AccountInfo:
+    def fetch_account_info(self, login: int) -> AccountInfo:
         self._connect(login)
         info = self._mt5.account_info()
         if info is None:

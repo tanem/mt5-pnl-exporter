@@ -1,4 +1,4 @@
-"""mt5-pnl-exporter CLI — poll | set-password | schema"""
+"""mt5-pnl-exporter CLI — export | set-investor-password | set-encryption-passphrase | schema"""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ from mt5_pnl_exporter.snapshot import (
 from mt5_pnl_exporter.sources.mt5 import MT5Source
 
 app = typer.Typer(
-    help="MT5 P&L exporter — poll deal history, write snapshot.json.gz.age.",
+    help="MT5 P&L exporter — export deal history, write snapshot.json.gz.age.",
     add_completion=False,
 )
 err = Console(stderr=True)
@@ -45,7 +45,7 @@ def _setup_logging(verbose: bool = False) -> None:
 
 
 @app.command()
-def poll(
+def export(
     config_path: Annotated[Path | None, typer.Option("--config", "-c")] = None,
     verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
 ) -> None:
@@ -91,7 +91,7 @@ def poll(
 
     for acct in cfg.accounts:
         try:
-            info = src.account_info(acct.login)
+            info = src.fetch_account_info(acct.login)
             deals = src.fetch_closed_deals(acct.login, epoch_from, epoch_to)
             flows = src.fetch_cash_flows(acct.login, epoch_from, epoch_to)
             positions = src.fetch_open_positions(acct.login)
@@ -106,18 +106,18 @@ def poll(
                     currency=info.currency,
                     balance=info.balance,
                     equity=info.equity,
-                    last_success=now.isoformat().replace("+00:00", "Z"),
+                    last_success_at=now.isoformat().replace("+00:00", "Z"),
                     last_error=None,
                 )
             )
             log.info(
-                f"[poll] {acct.label} ({acct.login}): "
+                f"[export] {acct.label} ({acct.login}): "
                 f"{len(deals)} closed deals, {len(positions)} open, "
                 f"{len(flows)} cash flows  OK"
             )
         except Exception as exc:
             error_count += 1
-            log.error(f"[poll] {acct.label} ({acct.login}): FAILED — {exc}")
+            log.error(f"[export] {acct.label} ({acct.login}): FAILED — {exc}")
             prior_acct = prior_by_login.get(acct.login)
             accounts_out.append(
                 AccountSnapshot(
@@ -126,7 +126,7 @@ def poll(
                     currency=prior_acct.currency if prior_acct else "",
                     balance=prior_acct.balance if prior_acct else 0.0,
                     equity=prior_acct.equity if prior_acct else 0.0,
-                    last_success=prior_acct.last_success if prior_acct else None,
+                    last_success_at=prior_acct.last_success_at if prior_acct else None,
                     last_error=str(exc),
                 )
             )
@@ -134,7 +134,7 @@ def poll(
     try:
         if error_count == len(cfg.accounts) and prior_by_login:
             log.error(
-                f"[poll] All {error_count} accounts failed; "
+                f"[export] All {error_count} accounts failed; "
                 f"keeping previous snapshot at {snap_path}."
             )
             raise SystemExit(1)
@@ -148,7 +148,7 @@ def poll(
             cash_flows=cash_flows_out,
         )
         snapshot.write(snap_path, snap, encryption_passphrase)
-        log.info(f"[poll] wrote {snap_path}  ({now.strftime('%Y-%m-%d %H:%M')})")
+        log.info(f"[export] wrote {snap_path}  ({now.strftime('%Y-%m-%d %H:%M')})")
     finally:
         src.shutdown()
 
@@ -156,8 +156,8 @@ def poll(
         raise SystemExit(1)
 
 
-@app.command("set-password")
-def set_password(
+@app.command("set-investor-password")
+def set_investor_password_cmd(
     login: Annotated[int, typer.Argument(help="MT5 account login number")],
 ) -> None:
     """Store an investor password in the OS keychain (never echoed to terminal)."""

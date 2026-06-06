@@ -31,7 +31,7 @@ def _account() -> AccountSnapshot:
         currency="USD",
         balance=1000.0,
         equity=1000.0,
-        last_success="2025-01-01T00:00:00Z",
+        last_success_at="2025-01-01T00:00:00Z",
         last_error=None,
     )
 
@@ -264,7 +264,7 @@ def test_read_corrupt_json_after_decrypt_raises_value_error(tmp_path):
 
 
 def test_read_missing_file(tmp_path):
-    with pytest.raises(FileNotFoundError, match="poll"):
+    with pytest.raises(FileNotFoundError, match="export"):
         read(tmp_path / "nonexistent.json.gz.age", PASSPHRASE)
 
 

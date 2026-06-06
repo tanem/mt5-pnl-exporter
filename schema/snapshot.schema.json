@@ -23,7 +23,7 @@
           "title": "Equity",
           "type": "number"
         },
-        "last_success": {
+        "last_success_at": {
           "anyOf": [
             {
               "type": "string"
@@ -32,7 +32,7 @@
               "type": "null"
             }
           ],
-          "title": "Last Success"
+          "title": "Last Success At"
         },
         "last_error": {
           "anyOf": [
@@ -52,7 +52,7 @@
         "currency",
         "balance",
         "equity",
-        "last_success",
+        "last_success_at",
         "last_error"
       ],
       "title": "AccountSnapshot",
