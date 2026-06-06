@@ -81,7 +81,7 @@ After decrypt + gunzip, the snapshot looks like:
       "currency": "USD",
       "balance": 10240.50,
       "equity": 10198.20,
-      "last_success": "2026-06-04T12:00:00Z",
+      "last_success_at": "2026-06-04T12:00:00Z",
       "last_error": null
     }
   ],
