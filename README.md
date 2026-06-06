@@ -53,7 +53,7 @@ uv tool install mt5-pnl-exporter          # any OS — schema command only
 ## Quick start
 
 ```bash
-$ mt5-pnl-exporter set-password 1234567
+$ mt5-pnl-exporter set-investor-password 1234567
 Password stored in keychain for login 1234567.
 
 $ mt5-pnl-exporter set-encryption-passphrase
@@ -62,10 +62,10 @@ Encryption passphrase stored in keychain.
 $ cp config.example.yaml config.yaml && chmod 600 config.yaml
 # edit config.yaml — snapshot_path, terminal_path, accounts
 
-$ mt5-pnl-exporter poll
-[INFO] [poll] Trend EA (1234567): 12 closed deals, 0 open, 0 cash flows  OK
-[INFO] [poll] Scalper EA (7654321): 8 closed deals, 1 open, 2 cash flows  OK
-[INFO] [poll] wrote ~/snapshots/mt5.json.gz.age  (2026-06-04 12:00)
+$ mt5-pnl-exporter export
+[INFO] [export] Trend EA (1234567): 12 closed deals, 0 open, 0 cash flows  OK
+[INFO] [export] Scalper EA (7654321): 8 closed deals, 1 open, 2 cash flows  OK
+[INFO] [export] wrote ~/snapshots/mt5.json.gz.age  (2026-06-04 12:00)
 ```
 
 After decrypt + gunzip, the snapshot looks like:
@@ -110,8 +110,8 @@ After decrypt + gunzip, the snapshot looks like:
 
 ## Commands
 
-- `mt5-pnl-exporter poll` — fetch deals from MT5 and write `snapshot.json.gz.age` atomically.
-- `mt5-pnl-exporter set-password <login>` — store an investor password in the OS keychain (`keyring`).
+- `mt5-pnl-exporter export` — fetch deals from MT5 once and write `snapshot.json.gz.age` atomically.
+- `mt5-pnl-exporter set-investor-password <login>` — store an investor password in the OS keychain (`keyring`).
 - `mt5-pnl-exporter set-encryption-passphrase` — store the snapshot encryption passphrase in the OS keychain (entered twice).
 - `mt5-pnl-exporter schema` — regenerate `schema/snapshot.schema.json` from the pydantic `Snapshot` model.
 
@@ -131,7 +131,7 @@ accounts:
     server: BrokerName-Live
 ```
 
-On Unix hosts, run `chmod 600 config.yaml` — `poll` warns when the file is group- or world-readable. Investor passwords and the encryption passphrase go in the OS keychain via `set-password` and `set-encryption-passphrase`, never in this file.
+On Unix hosts, run `chmod 600 config.yaml` — `export` warns when the file is group- or world-readable. Investor passwords and the encryption passphrase go in the OS keychain via `set-investor-password` and `set-encryption-passphrase`, never in this file.
 
 ## How it works
 
@@ -141,7 +141,7 @@ MT5 terminal       pydantic         (~10× smaller)  passphrase     (atomic .tmp
                    models                            from keychain
 ```
 
-`poll` logs into each account with its investor password, reads closed deals, open positions, and balance-family deals via the `MetaTrader5` Python API, then assembles them into a typed `Snapshot`. The full history is rebuilt each run — idempotent, so a missed run auto-backfills on the next tick.
+`export` logs into each account with its investor password, reads closed deals, open positions, and balance-family deals via the `MetaTrader5` Python API, then assembles them into a typed `Snapshot`. The full history is rebuilt each run — idempotent, so a missed run auto-backfills on the next run.
 
 Gzip + `age` encryption is mandatory, not optional. The on-disk file is always `snapshot.json.gz.age`; readers must reverse the pipeline (`age decrypt → gunzip → json.loads`) to decrypt. Sync services (Dropbox, OneDrive, Syncthing) and backups only ever see ciphertext.
 
@@ -155,11 +155,11 @@ Schema version stamping is `major.minor` (`SCHEMA_VERSION = "1.0"`). Readers acc
 
 ## Snapshot size
 
-The snapshot stores one record per closed deal, so it grows with trading volume. Rough sizing: ~350 bytes per closed-deal record. Ten accounts with two years of 50-deals-per-day-per-account history (~250 trading days/year) is around 90 MB; busier setups (200 deals/day) reach ~350 MB. Each `poll` gzips the JSON before encrypting, so the on-disk file is roughly an order of magnitude smaller — the 350 MB worst case lands at ~35 MB on disk, which is what sync services (Dropbox, Syncthing) see.
+The snapshot stores one record per closed deal, so it grows with trading volume. Rough sizing: ~350 bytes per closed-deal record. Ten accounts with two years of 50-deals-per-day-per-account history (~250 trading days/year) is around 90 MB; busier setups (200 deals/day) reach ~350 MB. Each `export` gzips the JSON before encrypting, so the on-disk file is roughly an order of magnitude smaller — the 350 MB worst case lands at ~35 MB on disk, which is what sync services (Dropbox, Syncthing) see.
 
 ## Threat model
 
-The OS user account on the Windows host that runs the exporter is the trust boundary. Anyone with that account's session can read the keychain, run `poll`, and read decrypted snapshots. The same applies to a consumer machine: anyone with that account's session can decrypt the snapshot. The exporter does not defend against a compromised user session on either side.
+The OS user account on the Windows host that runs the exporter is the trust boundary. Anyone with that account's session can read the keychain, run `export`, and read decrypted snapshots. The same applies to a consumer machine: anyone with that account's session can decrypt the snapshot. The exporter does not defend against a compromised user session on either side.
 
 ### What's protected
 
@@ -169,8 +169,8 @@ The OS user account on the Windows host that runs the exporter is the trust boun
 ### What's not protected
 
 - **A compromised user session on either host.** With keychain access the snapshot decrypts to plaintext.
-- **Traffic-analysis metadata.** File size, sync timing, and whether a poll ran today are visible to anyone observing the transport. age hides contents, not existence.
-- **Passphrase loss.** There is no recovery. The snapshot is reproducible, though — re-run `poll` to rebuild it from the broker's history.
+- **Traffic-analysis metadata.** File size, sync timing, and whether an export ran today are visible to anyone observing the transport. age hides contents, not existence.
+- **Passphrase loss.** There is no recovery. The snapshot is reproducible, though — re-run `export` to rebuild it from the broker's history.
 - **The broker side.** MT5 deal history lives on the broker's server and is governed by their controls, not by anything in this tool.
 
 ### Transport guidance
