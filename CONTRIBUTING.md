@@ -29,6 +29,24 @@ uv run mt5-pnl-exporter schema
 
 `tests/test_schema_file.py` fails CI if the committed schema drifts from the model. Commit the regenerated file alongside the model change.
 
+## Smoke-test a real export
+
+Before publishing a new version, exercise a real MT5 export from your working tree. `MetaTrader5` is Windows-only, so this runs on the Windows host where MT5 lives — the cross-platform checks (`pytest`, `ruff`, `mypy`) run anywhere.
+
+1. Prepare the host once — see the README's [Prepare the MT5 host](README.md#prepare-the-mt5-host) section (dedicated terminal + first-run login).
+2. `uv sync --extra mt5` — install dependencies including `MetaTrader5` from the clone.
+3. Store credentials if you haven't already: `uv run mt5-pnl-exporter set-investor-password <login>` and `uv run mt5-pnl-exporter set-encryption-passphrase`.
+4. `cp config.example.yaml config.yaml` and fill in `terminal_path` and `accounts`.
+5. `uv run mt5-pnl-exporter export` — confirm it logs `OK` per account and writes the snapshot.
+
+Steps 2–5 test the code in your working tree. To also test the **packaged artifact** a consumer installs (entry point, the `[mt5]` extra, the bundled schema file), build and install the wheel before publishing:
+
+```bash
+uv build                                   # produces dist/*.whl
+uv tool install "./dist/mt5_pnl_exporter-<ver>-py3-none-any.whl[mt5]"
+mt5-pnl-exporter export                    # runs the installed tool, not the clone
+```
+
 ## Dependency updates
 
 Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (config: [`renovate.json`](renovate.json)), which manages both GitHub Actions and Python dependencies (`pyproject.toml` / `uv.lock`):

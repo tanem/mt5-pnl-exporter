@@ -26,6 +26,7 @@ Runs on the Windows host where MT5 lives, reads deal history with a read-only in
 
 - [Why](#why)
 - [Install](#install)
+- [Prepare the MT5 host](#prepare-the-mt5-host)
 - [Quick start](#quick-start)
 - [Commands](#commands)
 - [Configuration](#configuration)
@@ -45,12 +46,42 @@ Runs on the Windows host where MT5 lives, reads deal history with a read-only in
 
 ## Install
 
+On a bare Windows host, install `uv` first:
+
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Then install the exporter:
+
 ```bash
 uv tool install "mt5-pnl-exporter[mt5]"   # Windows host with MT5
 uv tool install mt5-pnl-exporter          # any OS — schema command only
 ```
 
+## Prepare the MT5 host
+
+Do this once on the Windows host, before your first export.
+
+### A dedicated MT5 terminal
+
+The exporter needs its **own** MT5 terminal — *not* a terminal running your EAs. `mt5.login()` switches the connected terminal's active account, so pointing the exporter at an EA terminal would log your EA out and halt trading. A dedicated, idle terminal (no EA attached) runs alongside your EA terminals without touching them. The investor login and your EA's master login are independent, concurrent sessions.
+
+Install a second MT5 to its own path — e.g. `C:\Program Files\MT5 Exporter\` — separate from any EA terminal.
+
+### First-run login
+
+Launch the dedicated terminal once, manually, log in with any of your investor passwords, dismiss any first-run dialogs, then close it. This saves the server config and clears the open-account wizard. **Skip this and `export` fails with `(-10005, 'IPC timeout')`** — the wizard on a fresh install blocks the API.
+
+### Finding your config values
+
+- `terminal_path` — full path to the dedicated terminal's `terminal64.exe` (e.g. `C:\Program Files\MT5 Exporter\terminal64.exe`).
+- `login` — the account number (the MT5 login).
+- `server` — the broker server name, shown in MT5's login dialog (e.g. `BrokerName-Live`).
+
 ## Quick start
+
+Once the [MT5 host is prepared](#prepare-the-mt5-host):
 
 ```bash
 $ mt5-pnl-exporter set-investor-password 1234567
@@ -121,7 +152,7 @@ Copy `config.example.yaml` to `config.yaml` (gitignored) and fill in your values
 
 ```yaml
 snapshot_path: ~/snapshots/mt5.json.gz.age
-terminal_path: C:\mt5-poller\terminal64.exe
+terminal_path: C:\Program Files\MT5 Exporter\terminal64.exe
 accounts:
   - label: Trend EA
     login: 1234567
