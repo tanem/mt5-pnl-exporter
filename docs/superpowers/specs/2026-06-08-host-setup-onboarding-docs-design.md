@@ -36,6 +36,9 @@ install, renamed commands, mandatory encryption, manual-only v1).
 - Fix the `config.example.yaml` `terminal_path`, which currently points at the
   default MetaTrader 5 install dir — almost certainly the user's EA terminal,
   contradicting the dedicated-terminal rule.
+- Give a maintainer the from-clone real-export smoke test to run before a PyPI
+  publish (contributor-facing, in `CONTRIBUTING.md`), linking the new README
+  host-prep section so the loop is closed.
 
 ## Non-goals
 
@@ -113,6 +116,40 @@ Configuration block carries a third, also-stale value
 `C:\Program Files\MT5 Exporter\terminal64.exe` so README and the example config
 agree.
 
+### E. CONTRIBUTING.md — "Smoke-test a real export"
+
+New section (contributor-facing). Documents the from-clone real-export check
+and the stronger pre-publish wheel-install check.
+
+> ## Smoke-test a real export
+>
+> Before publishing a new version, exercise a real MT5 export from your working
+> tree. `MetaTrader5` is Windows-only, so this runs on the Windows host where
+> MT5 lives — the cross-platform checks (`pytest`, `ruff`, `mypy`) run anywhere.
+>
+> 1. Prepare the host once — see the README's
+>    [Prepare the MT5 host](README.md#prepare-the-mt5-host) section (dedicated
+>    terminal + first-run login).
+> 2. `uv sync --extra mt5` — install dependencies including `MetaTrader5` from
+>    the clone.
+> 3. Store credentials if you haven't already:
+>    `uv run mt5-pnl-exporter set-investor-password <login>` and
+>    `uv run mt5-pnl-exporter set-encryption-passphrase`.
+> 4. `cp config.example.yaml config.yaml` and fill in `terminal_path` and
+>    `accounts`.
+> 5. `uv run mt5-pnl-exporter export` — confirm it logs `OK` per account and
+>    writes the snapshot.
+>
+> Steps 2–5 test the code in your working tree. To also test the **packaged
+> artifact** a consumer installs (entry point, the `[mt5]` extra, the bundled
+> schema file), build and install the wheel before publishing:
+>
+> ```bash
+> uv build                                   # produces dist/*.whl
+> uv tool install "./dist/mt5_pnl_exporter-<ver>-py3-none-any.whl[mt5]"
+> mt5-pnl-exporter export                    # runs the installed tool, not the clone
+> ```
+
 ## Affected files / ripple
 
 - `README.md` — new "Prepare the MT5 host" section; Contents-list entry;
@@ -120,13 +157,15 @@ agree.
   `terminal_path` (currently `C:\mt5-poller\terminal64.exe`) aligned to
   `C:\Program Files\MT5 Exporter\terminal64.exe`.
 - `config.example.yaml` — `terminal_path` fix.
+- `CONTRIBUTING.md` — new "Smoke-test a real export" section.
 - `CLAUDE.md` — confirm the existing dedicated-terminal gotcha doesn't
   contradict the new wording; no edit expected.
 
 ## Verification
 
-- Anchor check: the `#prepare-the-mt5-host` link resolves to the new heading;
-  the Contents entry matches.
+- Anchor check: the `#prepare-the-mt5-host` link resolves to the new heading
+  from both the Contents list and the CONTRIBUTING.md cross-link; the Contents
+  entry matches.
 - `grep` confirms neither stale `terminal_path` value
   (`C:\Program Files\MetaTrader 5\`, `C:\mt5-poller\`) remains in `README.md`
   or `config.example.yaml`, and that `C:\Program Files\MT5 Exporter\` is the
