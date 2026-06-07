@@ -152,7 +152,7 @@ Copy `config.example.yaml` to `config.yaml` (gitignored) and fill in your values
 
 ```yaml
 snapshot_path: ~/snapshots/mt5.json.gz.age
-terminal_path: C:\mt5-poller\terminal64.exe
+terminal_path: C:\Program Files\MT5 Exporter\terminal64.exe
 accounts:
   - label: Trend EA
     login: 1234567

@@ -1,5 +1,5 @@
 snapshot_path: ~/snapshots/mt5.json.gz.age
-terminal_path: C:\Program Files\MetaTrader 5\terminal64.exe
+terminal_path: C:\Program Files\MT5 Exporter\terminal64.exe
 accounts:
   - label: Trend EA
     login: 1234567
