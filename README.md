@@ -46,6 +46,14 @@ Runs on the Windows host where MT5 lives, reads deal history with a read-only in
 
 ## Install
 
+On a bare Windows host, install `uv` first:
+
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Then install the exporter:
+
 ```bash
 uv tool install "mt5-pnl-exporter[mt5]"   # Windows host with MT5
 uv tool install mt5-pnl-exporter          # any OS — schema command only
@@ -72,6 +80,8 @@ Launch the dedicated terminal once, manually, log in with any of your investor p
 - `server` — the broker server name, shown in MT5's login dialog (e.g. `BrokerName-Live`).
 
 ## Quick start
+
+Once the [MT5 host is prepared](#prepare-the-mt5-host):
 
 ```bash
 $ mt5-pnl-exporter set-investor-password 1234567
