@@ -82,6 +82,11 @@ def export(
         prior_by_login = {a.login: a for a in prior.accounts}
     except FileNotFoundError:
         pass
+    except ValueError as exc:
+        log.warning(
+            f"[export] Could not read prior snapshot at {snap_path} ({exc}); "
+            "treating as absent and regenerating."
+        )
 
     accounts_out: list[AccountSnapshot] = []
     closed_deals_out: list[ClosedDeal] = []

@@ -8,6 +8,7 @@ installed and without network/keychain access.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -297,6 +298,29 @@ def test_export_writes_errors_when_all_fail_no_prior(tmp_path, install_fake):
     assert len(snap.accounts) == 1
     assert snap.accounts[0].last_error is not None
     assert snap.accounts[0].last_success_at is None
+
+
+def test_export_regenerates_when_prior_unreadable(tmp_path, install_fake, caplog):
+    """An existing prior that can't be decrypted is treated as absent: warn and regenerate."""
+    cfg_path = tmp_path / "config.yaml"
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567), ("Scalper EA", 7654321)])
+    os.chmod(cfg_path, 0o600)
+
+    # Plant an undecryptable prior (garbage bytes -> pyrage.DecryptError -> ValueError in read()).
+    snap_path.write_bytes(b"not a valid age file")
+
+    install_fake(_fake_from_sample())
+
+    with caplog.at_level(logging.WARNING, logger="mt5_pnl_exporter.cli"):
+        result = runner.invoke(app, ["export", "--config", str(cfg_path)])
+
+    assert result.exit_code == 0, result.output
+    # The garbage file was overwritten with a real, decryptable snapshot.
+    snap = snapshot.read(snap_path, TEST_PASSPHRASE)
+    assert {a.login for a in snap.accounts} == {1234567, 7654321}
+    # A warning explained why the prior was ignored.
+    assert "Could not read prior snapshot" in caplog.text
 
 
 # ─── export --config errors ──────────────────────────────────────────────────
