@@ -176,6 +176,12 @@ MT5 terminal       pydantic         (~10× smaller)  passphrase     (atomic .tmp
 
 Gzip + `age` encryption is mandatory, not optional. The on-disk file is always `snapshot.json.gz.age`; readers must reverse the pipeline (`age decrypt → gunzip → json.loads`) to decrypt. Sync services (Dropbox, OneDrive, Syncthing) and backups only ever see ciphertext.
 
+You can't open the file directly — double-clicking a `.age` file just fails. To decode it, use the [age](https://age-encryption.org/) CLI (`brew install age` on macOS; see the age site for other platforms):
+
+```bash
+age -d snapshot.json.gz.age | gunzip     # prompts for the passphrase, prints the JSON
+```
+
 ## Schema
 
 `schema/snapshot.schema.json` is generated from the pydantic models and committed. CI (`tests/test_schema_file.py`) fails if it drifts. The on-disk file is the schema's JSON gzipped then encrypted with [age](https://age-encryption.org/) under a passphrase from the OS keychain — consumers must reverse the same pipeline to read it.
