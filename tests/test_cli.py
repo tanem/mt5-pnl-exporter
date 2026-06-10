@@ -323,6 +323,33 @@ def test_export_regenerates_when_prior_unreadable(tmp_path, install_fake, caplog
     assert "Could not read prior snapshot" in caplog.text
 
 
+def test_export_overwrites_unreadable_prior_when_all_fail(tmp_path, install_fake):
+    """Unreadable prior + all accounts fail: the all-error snapshot replaces the garbage file.
+
+    An unreadable prior leaves prior_by_login empty, so the keep-previous-snapshot
+    guard (error_count == len(accounts) and prior_by_login) is bypassed and the
+    freshly-built all-error snapshot is written over the undecodable file.
+    """
+    cfg_path = tmp_path / "config.yaml"
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    _write_cfg(cfg_path, str(snap_path), [("Bad", 99998)])
+    os.chmod(cfg_path, 0o600)
+
+    snap_path.write_bytes(b"not a valid age file")
+
+    fake = _FakeSource(fail_logins={99998})
+    install_fake(fake)
+
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
+
+    assert result.exit_code == 1
+    # The garbage prior was unreadable, so it was overwritten with a readable all-error snapshot.
+    snap = snapshot.read(snap_path, TEST_PASSPHRASE)
+    assert len(snap.accounts) == 1
+    assert snap.accounts[0].last_error is not None
+    assert snap.accounts[0].last_success_at is None
+
+
 # ─── export --config errors ──────────────────────────────────────────────────
 
 
