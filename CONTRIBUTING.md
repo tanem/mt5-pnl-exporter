@@ -67,6 +67,25 @@ Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (conf
 
 Don't hand-bump these versions — let Renovate's PRs flow through.
 
+## Testing changes before a release
+
+For code or behaviour changes, test the **built artifact** directly on the Windows host — no publish needed, and it exercises the exact bytes a user installs:
+
+```bash
+uv build                                                       # produces dist/*.whl
+uv tool install "./dist/mt5_pnl_exporter-<ver>-py3-none-any.whl[mt5]"
+mt5-pnl-exporter export                                        # runs the installed tool
+```
+
+This is the right loop for code changes — see [Smoke-test a real export](#smoke-test-a-real-export) for the full procedure.
+
+**TestPyPI is not the place to test code changes.** Two limits make it awkward:
+
+- **Versions are immutable.** Each upload needs a unique version, and the workflow's `skip-existing: true` means a repeat `workflow_dispatch` at the same version is silently skipped — a new build would not replace the old one. You'd have to bump to a pre-release version (`1.1.0.dev1`, `1.1.0rc1`, …) on every iteration.
+- **It doesn't mirror dependencies.** Installing from TestPyPI needs `--extra-index-url https://pypi.org/simple/` so `typer`, `pydantic`, `MetaTrader5`, etc. resolve from real PyPI.
+
+Use TestPyPI only to rehearse the **publish mechanics** (the OIDC handshake, the rendered page, metadata) when you change packaging or `release.yml` itself — via the `workflow_dispatch` run described under [Releasing](#releasing).
+
 ## Releasing
 
 Releases publish to PyPI via [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) — there is no stored API token. The publish workflow is [`.github/workflows/release.yml`](.github/workflows/release.yml).

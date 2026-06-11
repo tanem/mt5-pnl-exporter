@@ -1,3 +1,5 @@
-"""mt5-pnl-exporter — polls MT5 deal history, writes snapshot.json."""
+"""mt5-pnl-exporter — exports MT5 deal history, writes a typed, encrypted snapshot."""
 
-__version__ = "0.1.0"
+from importlib.metadata import version
+
+__version__ = version("mt5-pnl-exporter")
