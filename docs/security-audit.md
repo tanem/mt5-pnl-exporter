@@ -20,7 +20,7 @@ Findings are listed below the table with patch references.
 | `secrets.py::get_encryption_passphrase` | passphrase | keychain read | n/a | n/a | ✓ returns to caller |
 | `secrets.py::set_encryption_passphrase` | passphrase | keychain write | ✓ | ✓ | ✓ accepts from caller |
 | `config.py::resolve_passwords` | investor pw | keychain read → dict | ✓ | ✓ (registered with `redact_filter` on read) | ✓ scoped to `MT5Source._passwords` |
-| `cli.py::poll` (encryption passphrase load) | passphrase | keychain read → `snapshot.read/write` | ✓ | ✓ (registered with `redact_filter` on read) | ✓ goes only to `pyrage.passphrase.encrypt/decrypt` |
+| `cli.py::export` (encryption passphrase load) | passphrase | keychain read → `snapshot.read/write` | ✓ | ✓ (registered with `redact_filter` on read) | ✓ goes only to `pyrage.passphrase.encrypt/decrypt` |
 | `secrets.py::redact_filter` | n/a (boundary) | log filter | n/a | n/a | covers `logging` handlers only; `rich.Console` output bypasses it — see **Finding 2** |
 | `config.py::check_file_perms` | n/a (boundary) | warn on `config.yaml` group/other-read | n/a | n/a | POSIX-only; no-op on Windows |
 

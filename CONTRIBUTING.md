@@ -12,7 +12,7 @@ uv run pre-commit install            # enable the gitleaks secret-scan hook
 ## Running tests and hooks
 
 ```bash
-uv run pytest                        # run the test suite (coverage gate: ≥95%)
+uv run pytest                        # run the test suite (coverage gate: 100%)
 uv run pre-commit run --all-files    # run the gitleaks hook manually
 uv run ruff check src/ tests/        # lint
 uv run ruff format --check src/ tests/  # check formatting

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This tool handles **read-only MT5 investor passwords** — credentials that can view account data but cannot place or modify trades — and a **snapshot encryption passphrase** used to age-encrypt the on-disk snapshot. Both live only on the Windows host where `poll` runs, in its OS keychain via `keyring` (Windows Credential Manager). Neither is written to disk, logs, or the snapshot file.
+This tool handles **read-only MT5 investor passwords** — credentials that can view account data but cannot place or modify trades — and a **snapshot encryption passphrase** used to age-encrypt the on-disk snapshot. Both live only on the Windows host where `export` runs, in its OS keychain via `keyring` (Windows Credential Manager). Neither is written to disk, logs, or the snapshot file.
 
 Vulnerabilities in scope:
 
@@ -22,6 +22,7 @@ Out of scope:
 - **GitHub Actions are pinned to commit SHAs** (not mutable tags), so a compromised or retagged action cannot inject code into CI. [Renovate](https://docs.renovatebot.com/) keeps the pins current via `helpers:pinGitHubActionDigests`.
 - **`lockFileMaintenance`** periodically refreshes `uv.lock` so transitive dependency security patches are picked up rather than pinned indefinitely.
 - Dependency update PRs (Renovate) must pass the full `tests` workflow before merging; see [`renovate.json`](renovate.json) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- **Releases publish via PyPI [Trusted Publishing](https://docs.pypi.org/trusted-publishers/)** (OIDC), so no long-lived PyPI API token is stored in the repo or CI; the `pypi` deployment environment also gates a real publish on manual approval. See [`CONTRIBUTING.md`](CONTRIBUTING.md)'s Releasing section.
 
 ## Reporting
 
