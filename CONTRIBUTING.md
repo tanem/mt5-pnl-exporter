@@ -17,6 +17,8 @@ uv run pre-commit run --all-files    # run the gitleaks hook manually
 uv run ruff check src/ tests/        # lint
 uv run ruff format --check src/ tests/  # check formatting
 uv run mypy src/mt5_pnl_exporter     # type-check
+uv build                             # build sdist + wheel
+uv run twine check --strict dist/*   # validate package metadata and README rendering
 ```
 
 ## Regenerating the schema
