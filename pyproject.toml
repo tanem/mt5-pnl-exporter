@@ -7,6 +7,19 @@ authors = [
     { name = "Tane Morgan", email = "464864+tanem@users.noreply.github.com" }
 ]
 requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["metatrader", "mt5", "trading", "forex", "pnl", "snapshot"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: Microsoft :: Windows",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Environment :: Console",
+    "Typing :: Typed",
+]
 dependencies = [
     "typer>=0.12",
     "rich>=13",
@@ -24,6 +37,12 @@ mt5 = [
 [project.scripts]
 mt5-pnl-exporter = "mt5_pnl_exporter.cli:app"
 
+[project.urls]
+Homepage = "https://github.com/tanem/mt5-pnl-exporter"
+Repository = "https://github.com/tanem/mt5-pnl-exporter"
+Issues = "https://github.com/tanem/mt5-pnl-exporter/issues"
+Changelog = "https://github.com/tanem/mt5-pnl-exporter/releases"
+
 [build-system]
 requires = ["uv_build>=0.11.12,<0.12.0"]
 build-backend = "uv_build"
@@ -36,6 +55,7 @@ dev = [
     "mypy>=1.13",
     "types-PyYAML>=6",
     "pre-commit>=4",
+    "twine>=6.1",
 ]
 
 [tool.pytest.ini_options]
