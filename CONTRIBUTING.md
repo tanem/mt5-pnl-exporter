@@ -75,6 +75,7 @@ Releases publish to PyPI via [Trusted Publishing](https://docs.pypi.org/trusted-
 
 - On PyPI and TestPyPI, register a pending publisher: owner `tanem`, repository `mt5-pnl-exporter`, workflow `release.yml`, environment `pypi` (PyPI) / `testpypi` (TestPyPI).
 - On GitHub, create the `pypi` and `testpypi` repository Environments.
+- Recommended: on the `pypi` Environment, add a **required reviewer** protection rule (Settings → Environments → `pypi`). The publish job then pauses for a manual approval before the immutable upload. As the solo maintainer, leave "Prevent self-review" unchecked — otherwise you cannot approve your own release.
 
 **Rehearse to TestPyPI** (validates the OIDC handshake and the rendered page without burning a real version):
 
@@ -84,7 +85,7 @@ Releases publish to PyPI via [Trusted Publishing](https://docs.pypi.org/trusted-
 
 1. Tag the commit, e.g. `git tag v1.0.0`.
 2. Draft a GitHub Release against that tag with release notes (the notes are the changelog).
-3. Publish the Release. The `release: published` event runs `release.yml`, which builds and uploads to PyPI.
+3. Publish the Release. The `release: published` event runs `release.yml`, which builds and uploads to PyPI. If the `pypi` Environment has a required-reviewer rule, the publish job waits for your approval in the Actions tab first.
 
 A PyPI version is immutable once uploaded — the version number cannot be reused. The TestPyPI rehearsal de-risks the first upload.
 
