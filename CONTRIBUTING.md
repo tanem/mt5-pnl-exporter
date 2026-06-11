@@ -74,7 +74,7 @@ Releases publish to PyPI via [Trusted Publishing](https://docs.pypi.org/trusted-
 **How it's wired:**
 
 - The repo has two GitHub Environments, `pypi` and `testpypi`. The `pypi` Environment requires a reviewer (`tanem`), so a real publish pauses for manual approval before the immutable upload. "Prevent self-review" is off, so the solo maintainer approves their own release.
-- Each index (PyPI, TestPyPI) needs a pending publisher registered once before its first publish — owner `tanem`, repository `mt5-pnl-exporter`, workflow `release.yml`, environment `pypi` (PyPI) / `testpypi` (TestPyPI). TestPyPI is set up; register the PyPI one before the first real release.
+- Both indices have a pending publisher registered — owner `tanem`, repository `mt5-pnl-exporter`, workflow `release.yml`, environment `pypi` (PyPI) / `testpypi` (TestPyPI). Each index needs this registered once before its first publish.
 
 **Rehearse to TestPyPI** — validates the OIDC handshake and the rendered page without burning a real version:
 
