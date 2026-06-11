@@ -71,21 +71,20 @@ Don't hand-bump these versions — let Renovate's PRs flow through.
 
 Releases publish to PyPI via [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) — there is no stored API token. The publish workflow is [`.github/workflows/release.yml`](.github/workflows/release.yml).
 
-**One-time setup (already done for an existing project, required once per index):**
+**How it's wired:**
 
-- On PyPI and TestPyPI, register a pending publisher: owner `tanem`, repository `mt5-pnl-exporter`, workflow `release.yml`, environment `pypi` (PyPI) / `testpypi` (TestPyPI).
-- On GitHub, create the `pypi` and `testpypi` repository Environments.
-- Recommended: on the `pypi` Environment, add a **required reviewer** protection rule (Settings → Environments → `pypi`). The publish job then pauses for a manual approval before the immutable upload. As the solo maintainer, leave "Prevent self-review" unchecked — otherwise you cannot approve your own release.
+- The repo has two GitHub Environments, `pypi` and `testpypi`. The `pypi` Environment requires a reviewer (`tanem`), so a real publish pauses for manual approval before the immutable upload. "Prevent self-review" is off, so the solo maintainer approves their own release.
+- Each index (PyPI, TestPyPI) needs a pending publisher registered once before its first publish — owner `tanem`, repository `mt5-pnl-exporter`, workflow `release.yml`, environment `pypi` (PyPI) / `testpypi` (TestPyPI). TestPyPI is set up; register the PyPI one before the first real release.
 
-**Rehearse to TestPyPI** (validates the OIDC handshake and the rendered page without burning a real version):
+**Rehearse to TestPyPI** — validates the OIDC handshake and the rendered page without burning a real version:
 
-1. Actions tab → `release` workflow → Run workflow (`workflow_dispatch`). This builds and uploads to TestPyPI.
+1. Actions tab → `release` workflow → Run workflow (`workflow_dispatch`). Builds and uploads to TestPyPI.
 
 **Publish a real release:**
 
 1. Tag the commit, e.g. `git tag v1.0.0`.
 2. Draft a GitHub Release against that tag with release notes (the notes are the changelog).
-3. Publish the Release. The `release: published` event runs `release.yml`, which builds and uploads to PyPI. If the `pypi` Environment has a required-reviewer rule, the publish job waits for your approval in the Actions tab first.
+3. Publish the Release. The `release: published` event runs `release.yml` and the publish job pauses on the `pypi` Environment. Approve it in the Actions tab; the job then builds and uploads to PyPI.
 
 A PyPI version is immutable once uploaded — the version number cannot be reused. The TestPyPI rehearsal de-risks the first upload.
 
