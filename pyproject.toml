@@ -1,6 +1,6 @@
 [project]
 name = "mt5-pnl-exporter"
-version = "1.0.0"
+version = "1.0.1"
 description = "MT5 P&L exporter — exports deal history on the Windows host where MT5 runs and writes a typed, encrypted snapshot."
 readme = "README.md"
 authors = [
