@@ -14,6 +14,7 @@ uv run pytest                          # tests (coverage = 100%; schema stalenes
 uv run mt5-pnl-exporter set-encryption-passphrase  # set passphrase used for snapshot encryption
 uv run mt5-pnl-exporter export                 # run a real export (Windows + creds)
 uv run mt5-pnl-exporter schema         # regenerate schema/snapshot.schema.json
+uv run twine check --strict dist/*             # validate built artifacts before release
 uv run ruff check src/ tests/
 uv run mypy src/mt5_pnl_exporter
 uv run pre-commit install              # gitleaks secret-scan hook
@@ -40,7 +41,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 - **Regenerate the schema after model changes**: `uv run mt5-pnl-exporter schema`. `tests/test_schema_file.py` catches missed regenerations.
 - **`SCHEMA_VERSION` is `"1.0"`** (major.minor string). `read()` accepts the same major up to its own minor; bump the minor for additive fields, the major for breaking changes.
 - **`export` is one-shot and manual.** It fetches once and exits — there is no polling loop or daemon. v1 is run-on-demand by design; no scheduler recipe ships (a low-frequency schedule would only serve stale equity and open positions by viewing time). If scheduling is ever added, a Windows Task Scheduler task must run as the same user that holds the keychain entries, in "run only when logged on" mode, or `keyring` cannot read the credential vault.
-- **Dependencies are Renovate-managed; don't hand-bump them.** GitHub Actions in `.github/workflows/` are pinned to commit SHAs (with a trailing version comment) and Python deps in `pyproject.toml`/`uv.lock` are tracked by `renovate.json`. Renovate opens the update PRs (digest/minor/patch auto-merge on green CI; majors and `MetaTrader5` open a PR). Do not replace a pinned SHA with a tag or manually bump a version — it fights the bot.
+- **Dependencies are Renovate-managed; don't hand-bump them.** GitHub Actions in `.github/workflows/` are pinned to commit SHAs (with a trailing version comment) and Python deps in `pyproject.toml`/`uv.lock` are tracked by `renovate.json`. Renovate opens the update PRs (digest/minor/patch auto-merge on green CI; majors and `MetaTrader5` open a PR). Do not replace a pinned SHA with a tag or manually bump a version — it fights the bot. Releases publish to PyPI via Trusted Publishing in `.github/workflows/release.yml` (published GitHub Release → PyPI; `workflow_dispatch` → TestPyPI); see CONTRIBUTING.md's "Releasing" section.
 
 ## Conventions
 

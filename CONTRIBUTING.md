@@ -17,6 +17,8 @@ uv run pre-commit run --all-files    # run the gitleaks hook manually
 uv run ruff check src/ tests/        # lint
 uv run ruff format --check src/ tests/  # check formatting
 uv run mypy src/mt5_pnl_exporter     # type-check
+uv build                             # build sdist + wheel
+uv run twine check --strict dist/*   # validate package metadata and README rendering
 ```
 
 ## Regenerating the schema
@@ -46,7 +48,7 @@ Before publishing a new version, exercise a real MT5 export from your working tr
 
    Replace `<snapshot_path>` with the value of `snapshot_path` from your `config.yaml`. The `r'...'` raw-string prefix keeps a Windows backslash path (e.g. `Z:\mt5-pnl-exporter\mt5.json.gz.age`) from being mangled by Python escape sequences. If it prints without raising, the file is structurally sound — `read()` reverses the pipeline and validates the full pydantic model.
 
-Steps 2–6 test the code in your working tree. To also test the **packaged artifact** a consumer installs (entry point, the `[mt5]` extra, the bundled schema file), build and install the wheel before publishing:
+Steps 2–6 test the code in your working tree. To also test the **packaged artifact** a consumer installs (entry point and the `[mt5]` extra), build and install the wheel before publishing:
 
 ```bash
 uv build                                   # produces dist/*.whl
@@ -64,6 +66,27 @@ Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (conf
 - `lockFileMaintenance` periodically refreshes `uv.lock` to pick up transitive security patches.
 
 Don't hand-bump these versions — let Renovate's PRs flow through.
+
+## Releasing
+
+Releases publish to PyPI via [Trusted Publishing](https://docs.pypi.org/trusted-publishers/) — there is no stored API token. The publish workflow is [`.github/workflows/release.yml`](.github/workflows/release.yml).
+
+**One-time setup (already done for an existing project, required once per index):**
+
+- On PyPI and TestPyPI, register a pending publisher: owner `tanem`, repository `mt5-pnl-exporter`, workflow `release.yml`, environment `pypi` (PyPI) / `testpypi` (TestPyPI).
+- On GitHub, create the `pypi` and `testpypi` repository Environments.
+
+**Rehearse to TestPyPI** (validates the OIDC handshake and the rendered page without burning a real version):
+
+1. Actions tab → `release` workflow → Run workflow (`workflow_dispatch`). This builds and uploads to TestPyPI.
+
+**Publish a real release:**
+
+1. Tag the commit, e.g. `git tag v1.0.0`.
+2. Draft a GitHub Release against that tag with release notes (the notes are the changelog).
+3. Publish the Release. The `release: published` event runs `release.yml`, which builds and uploads to PyPI.
+
+A PyPI version is immutable once uploaded — the version number cannot be reused. The TestPyPI rehearsal de-risks the first upload.
 
 ## Conventions
 
