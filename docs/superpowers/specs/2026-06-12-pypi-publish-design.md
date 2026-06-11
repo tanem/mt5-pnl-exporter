@@ -105,13 +105,32 @@ attach a protection rule later if desired.
 All actions are pinned to commit SHAs with a trailing `# vX.Y.Z` comment so
 Renovate manages them.
 
+### The GitHub Release is the trigger and the changelog
+
+Because the trigger is a published GitHub Release, every PyPI version has a
+matching Release on the repo's Releases page — this is not an optional extra, it
+is the mechanism. The release flow is:
+
+1. Create the tag `v1.0.0`.
+2. Draft a GitHub Release against that tag, with notes.
+3. Publish it. The `release: published` event fires `release.yml`, which builds
+   and uploads to PyPI.
+
+This is standard practice for well-regarded Python libraries (for example
+`httpx`, `rich`, `pydantic`): each PyPI version maps to a GitHub Release whose
+notes serve as the changelog. It is why the `Changelog` project URL points at
+`/releases`.
+
 ## 3. CI guard and pin reconciliation (`.github/workflows/ci.yml`)
 
-- Add a step (after the existing checks): `uv build`, then
-  `uvx twine check dist/*`. A broken README or invalid metadata then fails CI
-  before a release, matching the repo's existing "CI catches drift" approach
-  (`tests/test_schema_file.py`). `twine` is run via `uvx` so it is not added to
-  the dev dependency group (nothing else needs it locally).
+- Add `twine` to the `dev` dependency group and add a CI step (after the
+  existing checks): `uv build`, then `uv run twine check --strict dist/*`. A
+  broken README or invalid metadata then fails CI before a release, matching the
+  repo's existing "CI catches drift" approach (`tests/test_schema_file.py`).
+  `twine` is a lockfile-pinned dev dependency rather than an ephemeral `uvx`
+  tool, so it is reproducible and Renovate-managed like every other dependency
+  in the repo — a new twine release arrives as a reviewable PR, not a silent CI
+  behaviour change.
 - Reconcile `ci.yml`'s tag pins (`actions/checkout@v6`, `setup-python@v6`,
   `setup-uv@v7`, `codecov-action@v6`) to commit SHAs with trailing version
   comments. The new `release.yml` is SHA-pinned the same way from the start.
