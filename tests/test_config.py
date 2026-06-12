@@ -162,6 +162,12 @@ def test_check_file_perms_skipped_on_windows(tmp_path, monkeypatch, capsys):
     assert capsys.readouterr().err == ""
 
 
+def test_check_file_perms_missing_file_is_noop(tmp_path, capsys):
+    """A missing config is load_config's problem (curated error), not a stat() crash."""
+    check_file_perms(tmp_path / "nope.yaml")
+    assert capsys.readouterr().err == ""
+
+
 # ─── resolve_passwords ───────────────────────────────────────────────────────
 
 

@@ -56,6 +56,8 @@ def check_file_perms(path: Path) -> None:
     """Warn if config has group/other-readable bits. Only call from export."""
     if os.name == "nt":
         return
+    if not path.exists():
+        return  # load_config raises the curated FileNotFoundError
     mode = path.stat().st_mode & 0o777
     if mode & 0o077:
         from rich.console import Console
