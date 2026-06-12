@@ -33,6 +33,7 @@ from mt5_pnl_exporter.sources.mt5 import MT5Source
 app = typer.Typer(
     help="MT5 P&L exporter — export deal history, write snapshot.json.gz.age.",
     add_completion=False,
+    pretty_exceptions_enable=False,
 )
 err = Console(stderr=True)
 
@@ -53,8 +54,12 @@ def export(
     _setup_logging(verbose)
     log = logging.getLogger(__name__)
 
-    check_file_perms(config_path or Path("config.yaml"))
-    cfg = load_config(config_path)
+    try:
+        check_file_perms(config_path or Path("config.yaml"))
+        cfg = load_config(config_path)
+    except FileNotFoundError as exc:
+        err.print(f"[red]Error: {exc}[/red]")
+        raise SystemExit(1) from exc
 
     encryption_passphrase = get_encryption_passphrase()
     if not encryption_passphrase:
@@ -68,7 +73,11 @@ def export(
     snap_path = Path(cfg.snapshot_path)
     snap_path.parent.mkdir(parents=True, exist_ok=True)
 
-    passwords = resolve_passwords(cfg)
+    try:
+        passwords = resolve_passwords(cfg)
+    except RuntimeError as exc:
+        err.print(f"[red]Error: {exc}[/red]")
+        raise SystemExit(1) from exc
     servers = {a.login: a.server for a in cfg.accounts}
     src = MT5Source(cfg.terminal_path, passwords, servers)
 
