@@ -27,6 +27,11 @@ class Config(BaseModel):
     terminal_path: str = ""
     accounts: list[AccountConfig]
 
+    @field_validator("snapshot_path")
+    @classmethod
+    def _snapshot_path_expand_user(cls, v: str) -> str:
+        return str(Path(v).expanduser())
+
     @field_validator("terminal_path", mode="before")
     @classmethod
     def _terminal_path_none_to_empty(cls, v: Any) -> str:
