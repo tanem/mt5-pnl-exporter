@@ -12,6 +12,7 @@ from mt5_pnl_exporter.sources.base import (
     BALANCE_FAMILY_TYPES,
     DEAL_ENTRY_INOUT,
     DEAL_ENTRY_OUT,
+    DEAL_ENTRY_OUT_BY,
     AccountInfo,
 )
 
@@ -125,7 +126,7 @@ class MT5Source:
         for d in raw:
             if d.type in BALANCE_FAMILY_TYPES:
                 continue
-            if d.entry not in (DEAL_ENTRY_OUT, DEAL_ENTRY_INOUT):
+            if d.entry not in (DEAL_ENTRY_OUT, DEAL_ENTRY_INOUT, DEAL_ENTRY_OUT_BY):
                 continue
             out.append(
                 ClosedDeal(

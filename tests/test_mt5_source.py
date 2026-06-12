@@ -359,6 +359,32 @@ def test_fetch_closed_deals_keeps_only_closing_non_balance():
         sys.modules.pop("MetaTrader5", None)
 
 
+def test_fetch_closed_deals_keeps_reversal_and_close_by_deals():
+    """Reversal deals (entry=2) carry the closed leg's P&L and must be kept.
+
+    Official MetaTrader5 ENUM_DEAL_ENTRY: IN=0, OUT=1, INOUT=2 (reverse),
+    OUT_BY=3 (close by opposite position). Both 2 and 3 are closing deals.
+    """
+    DEAL_TYPE_BUY = 0
+    MT5_DEAL_ENTRY_INOUT = 2
+    MT5_DEAL_ENTRY_OUT_BY = 3
+
+    deals = [
+        _make_deal(ticket=1, type=DEAL_TYPE_BUY, entry=MT5_DEAL_ENTRY_INOUT, profit=-7.5),  # kept
+        _make_deal(ticket=2, type=DEAL_TYPE_BUY, entry=MT5_DEAL_ENTRY_OUT_BY, profit=3.0),  # kept
+    ]
+    _install_fake_mt5(history_deals=deals)
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        result = src.fetch_closed_deals(514248, 0, 1)
+        tickets = sorted(d.ticket for d in result)
+        assert tickets == [1, 2]
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
 def test_fetch_cash_flows_keeps_only_balance_family():
     """Only DEAL_TYPE_BALANCE-family records land in cash_flows."""
     from mt5_pnl_exporter.sources.base import (

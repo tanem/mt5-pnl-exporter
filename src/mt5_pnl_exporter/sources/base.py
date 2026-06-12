@@ -8,9 +8,12 @@ from pydantic import BaseModel
 
 from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition
 
-# MT5 deal-entry constants
+# MT5 deal-entry constants (ENUM_DEAL_ENTRY: IN=0, OUT=1, INOUT=2, OUT_BY=3).
+# INOUT is a position reversal — one deal closes the old position and opens the
+# opposite one, carrying the closed leg's realised P&L. OUT_BY is a close-by.
 DEAL_ENTRY_OUT = 1
-DEAL_ENTRY_INOUT = 3
+DEAL_ENTRY_INOUT = 2
+DEAL_ENTRY_OUT_BY = 3
 
 # MT5 deal-type constants
 # Trading deal types (used by ClosedDeal): 0 = buy, 1 = sell
