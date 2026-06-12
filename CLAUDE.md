@@ -25,7 +25,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 - `cli.py` — Typer app; commands: `export`, `set-investor-password`, `set-encryption-passphrase`, `schema`.
 - `sources/` — `DataSource` protocol (`base.py`); `MT5Source` (live, Windows only) is the sole implementation.
 - `snapshot.py` — typed pydantic models for `AccountSnapshot`, `ClosedDeal`, `OpenPosition`, `CashFlow` + atomic `write` (temp file + `replace`). `write` and `read` chain `JSON → gzip → age (passphrase)` on disk; both take the passphrase as a required argument. `read()` accepts same-major snapshots up to its own minor (currently `"1.0"`); rejects others with a readable error. One record per closed deal, position, and cash flow — no pre-aggregation.
-- `config.py` — pydantic models + YAML loader. Flat shape: `snapshot_path`, `terminal_path`, `accounts` at the top level.
+- `config.py` — pydantic models + YAML loader. Flat shape: `snapshot_path`, `terminal_path`, `accounts` at the top level. `snapshot_path` expands `~` at load time.
 - `secrets.py` — keyring access and log redaction.
 - `schema/snapshot.schema.json` — generated from the pydantic `Snapshot` model. `tests/test_schema_file.py` fails CI if it drifts.
 
@@ -33,6 +33,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 
 - **Never import `MetaTrader5` at module level.** It is deferred inside `MT5Source` (sources/mt5.py).
 - **Investor passwords only**, stored in the OS keychain via `keyring` on the Windows host. `redact_filter` (secrets.py) strips them from logs. The `config.yaml` perms check (`check_file_perms`) is enforced by `export` only.
+- **Typer pretty exceptions are disabled on purpose** (`pretty_exceptions_enable=False` in cli.py). Rich tracebacks render local variables, which after secret resolution would print the encryption passphrase and investor passwords to stderr — `redact_filter` only covers `logging` output. Don't re-enable them for prettier crashes. Expected errors (missing config, missing keyring entries) are caught in `export` and printed as curated one-liners.
 - **Snapshot is mandatorily age-encrypted** with a keychain-stored passphrase (account `encryption-passphrase` on `KEYRING_SERVICE`). `snapshot.read()` and `snapshot.write()` both require the passphrase; `export` refuses to run if it's unset (`set-encryption-passphrase` first). Consumers must reverse the same `gzip → age` pipeline.
 - **`export` tolerates an unreadable prior snapshot.** It reads the existing snapshot first (to carry account data forward and to decide whether to keep the previous file when all accounts fail). If that file is missing *or* can't be decoded (wrong passphrase after a `set-encryption-passphrase` change, corrupt, or unsupported schema), `export` logs a warning and regenerates rather than crashing — the prior read is only an optimisation. It catches both `FileNotFoundError` and `ValueError` at the call site; `snapshot.read()` itself stays strict.
 - **A dedicated MT5 terminal is required**: `mt5.login()` switches the terminal's active account, so pointing it at an EA terminal logs the EA out.
