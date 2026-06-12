@@ -27,6 +27,11 @@ class Config(BaseModel):
     terminal_path: str = ""
     accounts: list[AccountConfig]
 
+    @field_validator("snapshot_path")
+    @classmethod
+    def _snapshot_path_expand_user(cls, v: str) -> str:
+        return str(Path(v).expanduser())
+
     @field_validator("terminal_path", mode="before")
     @classmethod
     def _terminal_path_none_to_empty(cls, v: Any) -> str:
@@ -51,6 +56,8 @@ def check_file_perms(path: Path) -> None:
     """Warn if config has group/other-readable bits. Only call from export."""
     if os.name == "nt":
         return
+    if not path.exists():
+        return  # load_config raises the curated FileNotFoundError
     mode = path.stat().st_mode & 0o777
     if mode & 0o077:
         from rich.console import Console

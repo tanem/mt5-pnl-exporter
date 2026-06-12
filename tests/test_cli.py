@@ -354,9 +354,27 @@ def test_export_overwrites_unreadable_prior_when_all_fail(tmp_path, install_fake
 
 
 def test_export_config_not_found(tmp_path):
+    """Missing config: curated 'copy the example' message, exit 1, no traceback."""
     missing = tmp_path / "nonexistent.yaml"
     result = runner.invoke(app, ["export", "--config", str(missing)])
-    assert result.exit_code != 0
+    assert result.exit_code == 1
+    assert "config.example.yaml" in result.output
+    assert "Traceback" not in result.output
+
+
+def test_export_missing_investor_password_curated_error(tmp_path, monkeypatch):
+    """Missing keyring password: curated hint, exit 1, no traceback."""
+    cfg_path = tmp_path / "config.yaml"
+    _write_cfg(cfg_path, str(tmp_path / "snapshot.json.gz.age"), [("Trend EA", 1234567)])
+    os.chmod(cfg_path, 0o600)
+    monkeypatch.setattr("mt5_pnl_exporter.cli.get_encryption_passphrase", lambda: TEST_PASSPHRASE)
+    # Real resolve_passwords runs; the keyring lookup it makes finds nothing.
+    monkeypatch.setattr("mt5_pnl_exporter.config.get_investor_password", lambda login: None)
+
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
+    assert result.exit_code == 1
+    assert "set-investor-password" in result.output
+    assert "Traceback" not in result.output
 
 
 # ─── export src.shutdown() path ──────────────────────────────────────────────

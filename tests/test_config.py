@@ -71,6 +71,33 @@ def test_terminal_path_null_coerced_to_empty(tmp_path):
     assert cfg.terminal_path == ""
 
 
+def test_snapshot_path_tilde_expands_to_home(tmp_path, monkeypatch):
+    """`~/...` in snapshot_path resolves against the user's home at load time."""
+    monkeypatch.setenv("HOME", str(tmp_path))  # POSIX
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Windows
+    cfg_path = tmp_path / "config.yaml"
+    _write_cfg(
+        cfg_path,
+        "snapshot_path: ~/snaps/mt5.json.gz.age\n"
+        "accounts:\n"
+        "  - label: Test\n"
+        "    login: 1\n"
+        "    server: TestBroker\n",
+    )
+    cfg = load_config(cfg_path)
+    assert cfg.snapshot_path == str(tmp_path / "snaps" / "mt5.json.gz.age")
+    assert "~" not in cfg.snapshot_path
+
+
+def test_snapshot_path_absolute_unchanged():
+    """Absolute paths pass through the expansion validator untouched."""
+    cfg = Config(
+        snapshot_path="/abs/s.json",
+        accounts=[AccountConfig(label="A", login=1, server="X")],
+    )
+    assert cfg.snapshot_path == "/abs/s.json"
+
+
 # ─── validators ──────────────────────────────────────────────────────────────
 
 
@@ -132,6 +159,12 @@ def test_check_file_perms_skipped_on_windows(tmp_path, monkeypatch, capsys):
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text("x: 1\n")
     check_file_perms(cfg_path)
+    assert capsys.readouterr().err == ""
+
+
+def test_check_file_perms_missing_file_is_noop(tmp_path, capsys):
+    """A missing config is load_config's problem (curated error), not a stat() crash."""
+    check_file_perms(tmp_path / "nope.yaml")
     assert capsys.readouterr().err == ""
 
 
