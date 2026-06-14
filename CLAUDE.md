@@ -25,7 +25,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 - `cli.py` — Typer app; commands: `export`, `set-investor-password`, `set-encryption-passphrase`, `schema`.
 - `sources/` — `DataSource` protocol (`base.py`); `MT5Source` (live, Windows only) is the sole implementation.
 - `snapshot.py` — typed pydantic models for `AccountSnapshot`, `ClosedDeal`, `OpenPosition`, `CashFlow` + atomic `write` (temp file + `replace`). `write` and `read` chain `JSON → gzip → age (passphrase)` on disk; both take the passphrase as a required argument. `read()` accepts same-major snapshots up to its own minor (currently `"1.0"`); rejects others with a readable error. One record per closed deal, position, and cash flow — no pre-aggregation.
-- `config.py` — pydantic models + YAML loader. Flat shape: `snapshot_path`, `terminal_path`, `accounts` at the top level. `snapshot_path` expands `~` at load time.
+- `config.py` — pydantic models + YAML loader. Flat shape: `snapshot_path`, `terminal_path`, `accounts` at the top level. `snapshot_path` expands `~` at load time. The config path defaults to `config.yaml` resolved against the current working directory (`_DEFAULT_CONFIG_PATH`); `export`'s `--config`/`-c` flag overrides it with an explicit path. There is no env-var or fixed-location fallback — run from the config's directory or pass `--config`.
 - `secrets.py` — keyring access and log redaction.
 - `schema/snapshot.schema.json` — generated from the pydantic `Snapshot` model. `tests/test_schema_file.py` fails CI if it drifts.
 

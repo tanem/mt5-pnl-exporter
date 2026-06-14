@@ -164,6 +164,12 @@ accounts:
 
 On Unix hosts, run `chmod 600 config.yaml` — `export` warns when the file is group- or world-readable. Investor passwords and the encryption passphrase go in the OS keychain via `set-investor-password` and `set-encryption-passphrase`, never in this file.
 
+`export` looks for `config.yaml` in the current working directory, so run it from the directory that holds the file. To run from anywhere else, point it at the file explicitly with `--config`/`-c`:
+
+```bash
+mt5-pnl-exporter export --config C:\Users\you\mt5\config.yaml
+```
+
 ## How it works
 
 ```
