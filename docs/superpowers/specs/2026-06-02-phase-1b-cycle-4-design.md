@@ -223,7 +223,7 @@ If cycle 5 or cycle 6 slips, the tag and the publish wait too.
 Once cycle 4, cycle 5, and cycle 6 are all on `main`:
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git checkout main && git pull --ff-only
 git tag -a 1.0.0 -m "1.0.0 — first stable release"
 git push --tags

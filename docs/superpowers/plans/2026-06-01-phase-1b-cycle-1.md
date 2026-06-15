@@ -6,7 +6,7 @@
 
 **Architecture:** Snapshot models grow from two to four record types — `AccountSnapshot` unchanged, `DailyRow` replaced by `ClosedDeal` (full MT5 `TradeDeal` fields), `OpenPosition` (full MT5 `TradePosition` fields), `CashFlow` (same shape as `ClosedDeal`, balance-family records). `DataSource` protocol grows from one fetcher to three. `MT5Source` memoises `history_deals_get` across the closed-deal + cash-flow calls. All MT5 enum-ish integer fields are kept raw. Config flattens — no `poll:` wrapper.
 
-**Tech Stack:** Python 3.12, pydantic 2, Typer, pytest with coverage, ruff, mypy, uv. Working directory throughout this plan: `/Users/tane/Code/mt5-pnl-exporter` (a separate repo from the one this plan lives in).
+**Tech Stack:** Python 3.12, pydantic 2, Typer, pytest with coverage, ruff, mypy, uv. Working directory throughout this plan: `<repo-root>` (a separate repo from the one this plan lives in).
 
 **Reference spec:** [`docs/superpowers/specs/2026-06-01-phase-1b-cycle-1-design.md`](../specs/2026-06-01-phase-1b-cycle-1-design.md).
 
@@ -480,7 +480,7 @@ Expected: passes.
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add src/mt5_pnl_exporter/snapshot.py tests/test_snapshot.py schema/snapshot.schema.json
 git commit -m "feat: snapshot models — ClosedDeal, OpenPosition, CashFlow (schema v2)
 
@@ -1502,7 +1502,7 @@ Expected: all pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add src/mt5_pnl_exporter/sources/base.py src/mt5_pnl_exporter/sources/mt5.py tests/test_mt5_source.py
 git commit -m "feat: DataSource protocol gains open positions + cash flows
 
@@ -1524,7 +1524,7 @@ fetches hit MT5 once. Adds balance-family deal-type constants."
 
 - [ ] **Step 1: Read the current test_config.py to preserve its non-flatten coverage**
 
-Run: `cat /Users/tane/Code/mt5-pnl-exporter/tests/test_config.py`
+Run: `cat <repo-root>/tests/test_config.py`
 Expected: prints current test file. Read it to identify cases unrelated to `poll.terminal_path` (e.g. unique-labels, accounts-not-empty, keyring resolution, perms-check). These cases must survive the rewrite.
 
 - [ ] **Step 2: Write the new test_config.py**
@@ -1789,7 +1789,7 @@ Expected: all pass.
 Check whether `config.example.yaml` exists at the repo root and, if so, rewrite it to the flat shape. Use:
 
 ```bash
-ls /Users/tane/Code/mt5-pnl-exporter/config.example.yaml
+ls <repo-root>/config.example.yaml
 ```
 
 If present, replace its contents with:
@@ -1811,7 +1811,7 @@ If the file does not exist, skip this step.
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add src/mt5_pnl_exporter/config.py tests/test_config.py
 [ -f config.example.yaml ] && git add config.example.yaml
 git commit -m "refactor: flatten config — terminal_path at top level
@@ -2393,7 +2393,7 @@ Expected: all pass.
 - [ ] **Step 6: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add src/mt5_pnl_exporter/cli.py tests/test_cli.py tests/fixtures/sample_snapshot.json
 git commit -m "feat: rewrite poll for the new snapshot shape
 
@@ -2419,7 +2419,7 @@ example of the v2 schema and seeds the cli fake."
 
 Run:
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 grep -rn "from mt5_pnl_exporter import aggregate\|mt5_pnl_exporter.aggregate\|deals_to_daily\|FixtureSource\|sources.fixture\|sample_deals" src/ tests/ docs/ README.md CLAUDE.md 2>/dev/null
 ```
 Expected: no output (or only matches in `docs/superpowers/` which is historical and fine to leave).
@@ -2429,7 +2429,7 @@ If any production code or active test references appear, stop and fix them befor
 - [ ] **Step 2: Delete the files**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git rm src/mt5_pnl_exporter/aggregate.py
 git rm src/mt5_pnl_exporter/sources/fixture.py
 git rm tests/test_aggregate.py
@@ -2444,7 +2444,7 @@ Expected: all tests pass; coverage report appears at the end.
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git commit -m "chore: drop aggregate.py, FixtureSource, and old fixtures
 
 aggregate.deals_to_daily has no caller in the v2 schema. FixtureSource
@@ -2465,7 +2465,7 @@ Only the changes that fall out of cycle 1's code changes. The full reframe + thr
 
 - [ ] **Step 1: Update CLAUDE.md**
 
-Apply these edits to `/Users/tane/Code/mt5-pnl-exporter/CLAUDE.md`:
+Apply these edits to `<repo-root>/CLAUDE.md`:
 
 a) Replace the `Commands` block's poll line:
 
@@ -2539,7 +2539,7 @@ Replace with:
 The README's contents vary; before editing, read it:
 
 ```bash
-cat /Users/tane/Code/mt5-pnl-exporter/README.md
+cat <repo-root>/README.md
 ```
 
 Apply these edits where the patterns appear:
@@ -2566,7 +2566,7 @@ If the README already has the new shape described accurately (e.g. it was rewrit
 
 Run:
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 gh api -X POST /markdown -f mode=gfm -f context=tanem/mt5-pnl-exporter -F text=@README.md > /tmp/readme-rendered.html
 echo "rendered $(wc -c </tmp/readme-rendered.html) bytes"
 grep -c '<h[1-6]' /tmp/readme-rendered.html
@@ -2576,7 +2576,7 @@ Expected: a positive byte count and at least one heading. If the render command 
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add CLAUDE.md README.md
 git commit -m "docs: align CLAUDE.md + README with the v2 snapshot shape
 
@@ -2621,7 +2621,7 @@ Expected: no diff (schema was regenerated in Task 1).
 Cycle 1 work lives on `phase-1b-cycle-1`. Push the branch and open a draft PR for review; do NOT merge or push to `main`.
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git status
 git log --oneline main..HEAD
 git push -u origin phase-1b-cycle-1

@@ -10,7 +10,7 @@
 
 **Spec:** [`docs/superpowers/specs/2026-06-08-host-setup-onboarding-docs-design.md`](../specs/2026-06-08-host-setup-onboarding-docs-design.md)
 
-**Conventions reminder:** NZ English (realise, behaviour, colour). No hyperbole. The work is on branch `docs/host-setup-onboarding` (already created, with the spec committed).
+**Conventions reminder:** British/Commonwealth English (realise, behaviour, colour). No hyperbole. The work is on branch `docs/host-setup-onboarding` (already created, with the spec committed).
 
 ---
 
@@ -329,5 +329,5 @@ EOF
 
 - This is a **docs-only** change. There is no test suite to run for these edits; verification is the `grep`/read checks in each task. Do **not** add or modify code to satisfy a step.
 - Preserve exact backslash paths (`C:\Program Files\MT5 Exporter\terminal64.exe`) — these are Windows paths in Markdown/YAML, not escapes.
-- NZ English throughout (the prose already uses "realise/behaviour"; match it).
+- British/Commonwealth English throughout (the prose already uses "realise/behaviour"; match it).
 - The branch `docs/host-setup-onboarding` already exists and carries the committed spec; commit each task onto it.

@@ -52,7 +52,7 @@ mt5-pnl-exporter/
 ```
 
 **Dropped wholesale:** `src/mt5pnl/render.py`, `tests/test_render.py`.
-**Source for everything ported:** the current `mt5-pnl` repo at `/Users/tane/Code/mt5-pnl`. Path references below use `OLD/` as shorthand for that.
+**Source for everything ported:** the current `mt5-pnl` repo at `<mt5-pnl-root>`. Path references below use `OLD/` as shorthand for that.
 
 ---
 
@@ -60,7 +60,7 @@ mt5-pnl-exporter/
 
 **Files:**
 - Create: new GitHub repo `tanem/mt5-pnl-exporter`
-- Create: `~/Code/mt5-pnl-exporter/` (local clone)
+- Create: `<repo-root>/` (local clone)
 - Create: `pyproject.toml`, `.gitignore`, `LICENSE`, `README.md` skeleton, `.pre-commit-config.yaml`, `.git-blame-ignore-revs`
 - Move: `OLD/docs/superpowers/specs/2026-05-31-repo-split-design.md` → new repo
 - Move: `OLD/docs/superpowers/plans/2026-05-31-phase-1a-port-exporter.md` → new repo (this file)
@@ -82,10 +82,10 @@ cd mt5-pnl-exporter
 - [ ] **Step 3: Carry over LICENSE, .gitignore, pre-commit config, blame-ignore**
 
 ```bash
-cp ~/Code/mt5-pnl/LICENSE .
-cp ~/Code/mt5-pnl/.gitignore .
-cp ~/Code/mt5-pnl/.pre-commit-config.yaml .
-cp ~/Code/mt5-pnl/.git-blame-ignore-revs .
+cp <mt5-pnl-root>/LICENSE .
+cp <mt5-pnl-root>/.gitignore .
+cp <mt5-pnl-root>/.pre-commit-config.yaml .
+cp <mt5-pnl-root>/.git-blame-ignore-revs .
 ```
 
 - [ ] **Step 4: Write `pyproject.toml` with new naming**
@@ -215,17 +215,17 @@ __version__ = "0.1.0"
 - [ ] **Step 8: Move spec and plan from the old repo**
 
 ```bash
-mv ~/Code/mt5-pnl/docs/superpowers/specs/2026-05-31-repo-split-design.md docs/superpowers/specs/
-mv ~/Code/mt5-pnl/docs/superpowers/plans/2026-05-31-phase-1a-port-exporter.md docs/superpowers/plans/
+mv <mt5-pnl-root>/docs/superpowers/specs/2026-05-31-repo-split-design.md docs/superpowers/specs/
+mv <mt5-pnl-root>/docs/superpowers/plans/2026-05-31-phase-1a-port-exporter.md docs/superpowers/plans/
 ```
 
 Then stage the deletion in the old repo:
 
 ```bash
-cd ~/Code/mt5-pnl
+cd <mt5-pnl-root>
 git rm docs/superpowers/specs/2026-05-31-repo-split-design.md docs/superpowers/plans/2026-05-31-phase-1a-port-exporter.md
 git commit -m "chore: move spec and plan into mt5-pnl-exporter"
-cd ~/Code/mt5-pnl-exporter
+cd <repo-root>
 ```
 
 - [ ] **Step 9: First commit + initial push**
@@ -263,13 +263,13 @@ Expected: succeeds, creates `.venv/`, installs dev deps. Coverage threshold may 
 - [ ] **Step 1: Copy the source unchanged**
 
 ```bash
-cp ~/Code/mt5-pnl/src/mt5pnl/secrets.py src/mt5_pnl_exporter/secrets.py
+cp <mt5-pnl-root>/src/mt5pnl/secrets.py src/mt5_pnl_exporter/secrets.py
 ```
 
 - [ ] **Step 2: Copy the test, fix imports**
 
 ```bash
-cp ~/Code/mt5-pnl/tests/test_secrets.py tests/test_secrets.py
+cp <mt5-pnl-root>/tests/test_secrets.py tests/test_secrets.py
 sed -i '' 's/from mt5pnl\./from mt5_pnl_exporter./g; s/import mt5pnl\./import mt5_pnl_exporter./g' tests/test_secrets.py
 ```
 
@@ -301,7 +301,7 @@ git commit -m "feat: port secrets.py (keyring + redact filter)"
 - [ ] **Step 1: Copy the source unchanged**
 
 ```bash
-cp ~/Code/mt5-pnl/src/mt5pnl/sources/base.py src/mt5_pnl_exporter/sources/base.py
+cp <mt5-pnl-root>/src/mt5pnl/sources/base.py src/mt5_pnl_exporter/sources/base.py
 ```
 
 - [ ] **Step 2: Verify it imports cleanly**
@@ -334,13 +334,13 @@ git commit -m "feat: port sources/base.py (DataSource protocol + MT5 constants)"
 - [ ] **Step 1: Copy the source unchanged**
 
 ```bash
-cp ~/Code/mt5-pnl/src/mt5pnl/snapshot.py src/mt5_pnl_exporter/snapshot.py
+cp <mt5-pnl-root>/src/mt5pnl/snapshot.py src/mt5_pnl_exporter/snapshot.py
 ```
 
 - [ ] **Step 2: Copy the test, fix imports**
 
 ```bash
-cp ~/Code/mt5-pnl/tests/test_snapshot.py tests/test_snapshot.py
+cp <mt5-pnl-root>/tests/test_snapshot.py tests/test_snapshot.py
 sed -i '' 's/from mt5pnl\./from mt5_pnl_exporter./g; s/import mt5pnl\./import mt5_pnl_exporter./g' tests/test_snapshot.py
 ```
 
@@ -374,13 +374,13 @@ The fixture path in the old `fixture.py` is computed via `Path(__file__).parent.
 - [ ] **Step 1: Copy the fixture data**
 
 ```bash
-cp ~/Code/mt5-pnl/tests/fixtures/sample_deals.json tests/fixtures/sample_deals.json
+cp <mt5-pnl-root>/tests/fixtures/sample_deals.json tests/fixtures/sample_deals.json
 ```
 
 - [ ] **Step 2: Copy the source, fix imports**
 
 ```bash
-cp ~/Code/mt5-pnl/src/mt5pnl/sources/fixture.py src/mt5_pnl_exporter/sources/fixture.py
+cp <mt5-pnl-root>/src/mt5pnl/sources/fixture.py src/mt5_pnl_exporter/sources/fixture.py
 sed -i '' 's/from mt5pnl\./from mt5_pnl_exporter./g' src/mt5_pnl_exporter/sources/fixture.py
 ```
 
@@ -412,14 +412,14 @@ git commit -m "feat: port sources/fixture.py + sample_deals.json"
 - [ ] **Step 1: Copy the source, fix imports**
 
 ```bash
-cp ~/Code/mt5-pnl/src/mt5pnl/sources/mt5.py src/mt5_pnl_exporter/sources/mt5.py
+cp <mt5-pnl-root>/src/mt5pnl/sources/mt5.py src/mt5_pnl_exporter/sources/mt5.py
 sed -i '' 's/from mt5pnl\./from mt5_pnl_exporter./g' src/mt5_pnl_exporter/sources/mt5.py
 ```
 
 - [ ] **Step 2: Copy the tests, fix imports**
 
 ```bash
-cp ~/Code/mt5-pnl/tests/test_mt5_source.py tests/test_mt5_source.py
+cp <mt5-pnl-root>/tests/test_mt5_source.py tests/test_mt5_source.py
 sed -i '' 's/from mt5pnl\./from mt5_pnl_exporter./g; s/import mt5pnl\./import mt5_pnl_exporter./g; s/"mt5pnl\./"mt5_pnl_exporter./g' tests/test_mt5_source.py
 ```
 
@@ -519,7 +519,7 @@ Save as `src/mt5_pnl_exporter/aggregate.py`.
 Read `OLD/tests/test_aggregate.py`. Identify which tests target `deals_to_daily` (look for `deals_to_daily(` in the body); drop tests that target `group_daily` / `summary` / `PeriodRow`. Write the kept tests to `tests/test_aggregate.py` with imports rewritten:
 
 ```bash
-cp ~/Code/mt5-pnl/tests/test_aggregate.py tests/test_aggregate.py
+cp <mt5-pnl-root>/tests/test_aggregate.py tests/test_aggregate.py
 sed -i '' 's/from mt5pnl\./from mt5_pnl_exporter./g; s/import mt5pnl\./import mt5_pnl_exporter./g' tests/test_aggregate.py
 ```
 
@@ -664,7 +664,7 @@ Save as `src/mt5_pnl_exporter/config.py`.
 - [ ] **Step 2: Port the relevant tests**
 
 ```bash
-cp ~/Code/mt5-pnl/tests/test_config.py tests/test_config.py
+cp <mt5-pnl-root>/tests/test_config.py tests/test_config.py
 sed -i '' 's/from mt5pnl\./from mt5_pnl_exporter./g; s/import mt5pnl\./import mt5_pnl_exporter./g' tests/test_config.py
 ```
 
@@ -889,7 +889,7 @@ Save as `src/mt5_pnl_exporter/cli.py`.
 - [ ] **Step 2: Port the relevant tests**
 
 ```bash
-cp ~/Code/mt5-pnl/tests/test_cli.py tests/test_cli.py
+cp <mt5-pnl-root>/tests/test_cli.py tests/test_cli.py
 sed -i '' 's/from mt5pnl\./from mt5_pnl_exporter./g; s/import mt5pnl\./import mt5_pnl_exporter./g; s/"mt5pnl\./"mt5_pnl_exporter./g' tests/test_cli.py
 ```
 
@@ -1056,7 +1056,7 @@ If nothing needs fixing, skip this commit.
 - [ ] **Step 1: Copy the workflow and rename package paths**
 
 ```bash
-cp ~/Code/mt5-pnl/.github/workflows/*.yml .github/workflows/
+cp <mt5-pnl-root>/.github/workflows/*.yml .github/workflows/
 sed -i '' 's/mt5pnl/mt5_pnl_exporter/g; s|src/mt5pnl|src/mt5_pnl_exporter|g' .github/workflows/*.yml
 ```
 
@@ -1139,7 +1139,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 
 ## Conventions
 
-- NZ English in comments and docs (realise, behaviour, colour). No hyperbole.
+- British/Commonwealth English in comments and docs (realise, behaviour, colour). No hyperbole.
 - Python 3.12+; `from __future__ import annotations` in every module.
 - Tests target `aggregate.py` and `snapshot.py`. Use `FixtureSource` instead of mocking MT5.
 - After changing commands, architecture, or a gotcha above, update this file and README.md in the same change.
