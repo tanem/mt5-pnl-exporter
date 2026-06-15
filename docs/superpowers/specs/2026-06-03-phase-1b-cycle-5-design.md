@@ -227,7 +227,7 @@ backups only ever see ciphertext.
 to:
 
 - Cross-references updated (e.g. "see `## Status`" → removed).
-- Minor wording polish for NZ English consistency where caught.
+- Minor wording polish for British/Commonwealth English consistency where caught.
 - `## Threat model` keeps its three subsections (What's protected /
   What's not protected / Transport guidance).
 
@@ -270,7 +270,7 @@ Port from `mt5-pnl/CONTRIBUTING.md`. Adjustments:
 - Keep the "Never import `MetaTrader5` at module level" convention —
   still applies (the `schema` command works on any OS precisely
   because of this).
-- Keep NZ English and the "update README + CLAUDE.md together" rule.
+- Keep British/Commonwealth English and the "update README + CLAUDE.md together" rule.
 
 Target length similar to mt5-pnl's (~35 lines).
 

@@ -27,7 +27,7 @@
 - [ ] **Step 0.1: Confirm branch and clean tree**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git status
 git log --oneline -3
 ```
@@ -39,7 +39,7 @@ If the branch isn't there or the tree isn't clean, stop and investigate before p
 - [ ] **Step 0.2: Confirm current ci.yml state**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 grep -nE "uses: (actions/checkout|actions/setup-python|astral-sh/setup-uv|codecov/codecov-action)" .github/workflows/ci.yml
 ```
 
@@ -82,7 +82,7 @@ Only the `v4` → `v6` token changes. The 6-space indent and the leading `- uses
 - [ ] **Step 1.2: Validate the workflow still parses**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))" && echo OK
 ```
 
@@ -91,7 +91,7 @@ Expected: `OK`.
 - [ ] **Step 1.3: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add .github/workflows/ci.yml
 git commit -m "ci: bump actions/checkout to v6 (Node 24)"
 ```
@@ -126,7 +126,7 @@ The following `with:` block (lines 15-16, `python-version: "3.12"`) stays untouc
 - [ ] **Step 2.2: Validate the workflow still parses**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))" && echo OK
 ```
 
@@ -135,7 +135,7 @@ Expected: `OK`.
 - [ ] **Step 2.3: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add .github/workflows/ci.yml
 git commit -m "ci: bump actions/setup-python to v6 (Node 24)"
 ```
@@ -168,7 +168,7 @@ The following `with:` block (token / slug / files) stays untouched.
 - [ ] **Step 3.2: Validate the workflow still parses**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))" && echo OK
 ```
 
@@ -177,7 +177,7 @@ Expected: `OK`.
 - [ ] **Step 3.3: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add .github/workflows/ci.yml
 git commit -m "ci: bump codecov/codecov-action to v6 (Node 24 via github-script v8)"
 ```
@@ -210,7 +210,7 @@ Change to:
 - [ ] **Step 4.2: Validate the workflow still parses**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 uv run python -c "import yaml; yaml.safe_load(open('.github/workflows/ci.yml'))" && echo OK
 ```
 
@@ -219,7 +219,7 @@ Expected: `OK`.
 - [ ] **Step 4.3: Confirm the full diff so far**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git diff main..HEAD -- .github/workflows/ci.yml
 ```
 
@@ -228,7 +228,7 @@ Expected: four lines changed (the four `uses:` pins above), nothing else. The `p
 - [ ] **Step 4.4: Commit**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git add .github/workflows/ci.yml
 git commit -m "ci: bump astral-sh/setup-uv to v8 (Node 24)"
 ```
@@ -254,7 +254,7 @@ Local YAML parsing already passed in each task. This step is the cumulative diff
 - [ ] **Step 5.1: Show the full cumulative diff vs `main`**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git diff main..HEAD -- .github/workflows/ci.yml
 ```
 
@@ -272,7 +272,7 @@ If any other line shows up in the diff, stop and reconcile before pushing.
 - [ ] **Step 5.2: Confirm commit log**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git log --oneline main..HEAD
 ```
 
@@ -291,7 +291,7 @@ Five commits total — one spec + four bumps, in the task order from this plan.
 - [ ] **Step 5.3: Confirm pytest still passes locally**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 uv run pytest 2>&1 | tail -3
 ```
 
@@ -306,7 +306,7 @@ Expected: `84 passed`, coverage 100%. The GHA bumps don't touch any Python — p
 - [ ] **Step 6.1: Push**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git push -u origin chore-node20-deprecation
 ```
 
@@ -346,7 +346,7 @@ Expected: PR URL printed.
 - [ ] **Step 6.3: Watch the first CI run**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 gh pr checks --watch
 ```
 

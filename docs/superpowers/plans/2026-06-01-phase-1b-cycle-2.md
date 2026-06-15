@@ -6,7 +6,7 @@
 
 **Architecture:** One pipeline, no escape hatch. `snapshot.write(path, snap, passphrase)` and `snapshot.read(path, passphrase)` gain a required `passphrase: str` argument and chain `Snapshot → JSON bytes → gzip → age (passphrase) → file`. Atomic write semantics from cycle 1 are preserved — the temp file holds the encrypted bytes. `secrets.py` grows a parallel pair of `get_encryption_passphrase` / `set_encryption_passphrase` functions sharing the existing `KEYRING_SERVICE` under a fixed `"encryption-passphrase"` account (no collision with login-keyed entries, which use integer-string accounts). `cli.poll` retrieves the passphrase from the keychain before touching MT5; if missing, it exits 1 with a fixed stderr message. A new `cli.set-encryption-passphrase` command mirrors `set-password`.
 
-**Tech Stack:** Python 3.12, pydantic 2, Typer, [pyrage](https://pypi.org/project/pyrage/) (Rust-backed age implementation), stdlib `gzip`, pytest with coverage, ruff, mypy, uv. Working directory throughout this plan: `/Users/tane/Code/mt5-pnl-exporter`.
+**Tech Stack:** Python 3.12, pydantic 2, Typer, [pyrage](https://pypi.org/project/pyrage/) (Rust-backed age implementation), stdlib `gzip`, pytest with coverage, ruff, mypy, uv. Working directory throughout this plan: `<repo-root>`.
 
 **Reference spec:** [`docs/superpowers/specs/2026-06-01-phase-1b-cycle-2-design.md`](../specs/2026-06-01-phase-1b-cycle-2-design.md).
 
@@ -1186,7 +1186,7 @@ Expected: no diff. Encryption is transport, not schema.
 Cycle 2 work lives on `phase-1b-cycle-2`. Push the branch and open a draft PR for review; do NOT merge or push to `main`.
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git status
 git log --oneline main..HEAD
 git push -u origin phase-1b-cycle-2

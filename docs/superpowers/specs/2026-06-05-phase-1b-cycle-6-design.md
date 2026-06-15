@@ -246,7 +246,7 @@ Once cycle 6 is on `main`, the manual tag/publish sequence from cycle
 4's spec proceeds:
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git checkout main && git pull --ff-only
 git tag -a 1.0.0 -m "1.0.0 — first stable release"
 git push --tags

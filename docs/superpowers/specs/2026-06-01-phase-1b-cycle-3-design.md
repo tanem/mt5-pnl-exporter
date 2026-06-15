@@ -31,8 +31,7 @@ Four deliverables, sequenced so the audit can reference the code patches.
 
 ## Threat model section
 
-New `## Threat model` section in `README.md`. Around 300–400 words. NZ
-English, no hyperbole. No code blocks, no operational recipes (Syncthing
+New `## Threat model` section in `README.md`. Around 300–400 words. British/Commonwealth English, no hyperbole. No code blocks, no operational recipes (Syncthing
 setup etc. — explicitly out of scope per the parent spec).
 
 Structure:

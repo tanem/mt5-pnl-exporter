@@ -25,13 +25,13 @@ Order of work: smallest/most-isolated first; README last because it's the larges
 ### Task 1: CLAUDE.md audit and (only-if-needed) edit
 
 **Files:**
-- Modify (conditional): `/Users/tane/Code/mt5-pnl-exporter/CLAUDE.md`
+- Modify (conditional): `<repo-root>/CLAUDE.md`
 
 The spec called for stripping stale "Tag `1.0` ships once …" framing and adding a schema-regen reminder near the `snapshot.py` line. A 2026-06-04 audit found neither edit was needed — the stale phrase isn't present, and a schema-regen Gotcha already exists (line 40: "**Regenerate the schema after model changes**: `uv run mt5-pnl-exporter schema`."). This task re-verifies at execution time and only edits if anything new has drifted in.
 
 - [ ] **Step 1: Read the current CLAUDE.md**
 
-Use the Read tool on `/Users/tane/Code/mt5-pnl-exporter/CLAUDE.md`.
+Use the Read tool on `<repo-root>/CLAUDE.md`.
 
 - [ ] **Step 2: Audit for stale 1.0 framing**
 
@@ -74,8 +74,8 @@ gh api /markdown -f mode=gfm -f context=tanem/mt5-pnl-exporter -F text=@CLAUDE.m
 Expected: HTML output produced, exit 0. Open `/tmp/claude-md-rendered.html` in a browser and visually verify formatting; flag visual issues if any. Then:
 
 ```bash
-git -C /Users/tane/Code/mt5-pnl-exporter add CLAUDE.md
-git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs(claude.md): polish stale 1.0 references"
+git -C <repo-root> add CLAUDE.md
+git -C <repo-root> commit -m "docs(claude.md): polish stale 1.0 references"
 ```
 
 ---
@@ -83,13 +83,13 @@ git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs(claude.md): polish stal
 ### Task 2: Design-doc hygiene — update cycle 4 spec's sequence diagram
 
 **Files:**
-- Modify: `/Users/tane/Code/mt5-pnl-exporter/docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md`
+- Modify: `<repo-root>/docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md`
 
 The cycle 4 spec's "Next: cycle 5" subsection contains a sequence diagram that does not anticipate cycle 6. Update it.
 
 - [ ] **Step 1: Read the cycle 4 spec, locate the sequence diagram**
 
-Use Read on `/Users/tane/Code/mt5-pnl-exporter/docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md`. The diagram is in the "Next: cycle 5 (pre-publish docs polish)" subsection (around line 205).
+Use Read on `<repo-root>/docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md`. The diagram is in the "Next: cycle 5 (pre-publish docs polish)" subsection (around line 205).
 
 Current content:
 
@@ -130,7 +130,7 @@ The opening sentence beneath the heading currently reads "Once both cycle 4 and 
 - [ ] **Step 4: Render check**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 gh api /markdown -f mode=gfm -f context=tanem/mt5-pnl-exporter \
   -F text=@docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md \
   > /tmp/cycle-4-spec-rendered.html
@@ -141,8 +141,8 @@ Expected: HTML output produced, exit 0. Visually verify the sequence diagram sti
 - [ ] **Step 5: Commit**
 
 ```bash
-git -C /Users/tane/Code/mt5-pnl-exporter add docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md
-git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs(spec): update cycle 4 sequence diagram to include cycle 6"
+git -C <repo-root> add docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md
+git -C <repo-root> commit -m "docs(spec): update cycle 4 sequence diagram to include cycle 6"
 ```
 
 ---
@@ -150,7 +150,7 @@ git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs(spec): update cycle 4 s
 ### Task 3: Write SECURITY.md
 
 **Files:**
-- Create: `/Users/tane/Code/mt5-pnl-exporter/SECURITY.md`
+- Create: `<repo-root>/SECURITY.md`
 
 Ported from `mt5-pnl/SECURITY.md` with adjustments for the exporter:
 - Scope mentions both investor passwords *and* the encryption passphrase.
@@ -160,7 +160,7 @@ Ported from `mt5-pnl/SECURITY.md` with adjustments for the exporter:
 
 - [ ] **Step 1: Create the file with this content**
 
-Use the Write tool on `/Users/tane/Code/mt5-pnl-exporter/SECURITY.md` with this exact content:
+Use the Write tool on `<repo-root>/SECURITY.md` with this exact content:
 
 ````markdown
 # Security policy
@@ -197,7 +197,7 @@ You will receive a response within 7 days. Once a fix is ready, we will coordina
 - [ ] **Step 2: Render check**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 gh api /markdown -f mode=gfm -f context=tanem/mt5-pnl-exporter \
   -F text=@SECURITY.md > /tmp/security-md-rendered.html
 ```
@@ -207,8 +207,8 @@ Expected: HTML output produced, exit 0. Verify the GFM `> [!NOTE]` callout rende
 - [ ] **Step 3: Commit**
 
 ```bash
-git -C /Users/tane/Code/mt5-pnl-exporter add SECURITY.md
-git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs: add SECURITY.md (vuln-reporting policy)"
+git -C <repo-root> add SECURITY.md
+git -C <repo-root> commit -m "docs: add SECURITY.md (vuln-reporting policy)"
 ```
 
 ---
@@ -216,7 +216,7 @@ git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs: add SECURITY.md (vuln-
 ### Task 4: Write CONTRIBUTING.md
 
 **Files:**
-- Create: `/Users/tane/Code/mt5-pnl-exporter/CONTRIBUTING.md`
+- Create: `<repo-root>/CONTRIBUTING.md`
 
 Ported from `mt5-pnl/CONTRIBUTING.md` with exporter-specific adjustments:
 - `mt5pnl` → `mt5-pnl-exporter` throughout (including the mypy package path).
@@ -226,7 +226,7 @@ Ported from `mt5-pnl/CONTRIBUTING.md` with exporter-specific adjustments:
 
 - [ ] **Step 1: Create the file with this content**
 
-Use the Write tool on `/Users/tane/Code/mt5-pnl-exporter/CONTRIBUTING.md` with this exact content (outer fence uses 4 backticks so the inner `bash` blocks render correctly):
+Use the Write tool on `<repo-root>/CONTRIBUTING.md` with this exact content (outer fence uses 4 backticks so the inner `bash` blocks render correctly):
 
 `````markdown
 # Contributing
@@ -262,7 +262,7 @@ uv run mt5-pnl-exporter schema
 
 ## Conventions
 
-- NZ English in comments and docs (realise, behaviour, colour).
+- British/Commonwealth English in comments and docs (realise, behaviour, colour).
 - Never import `MetaTrader5` at module level. Keep it deferred inside `MT5Source` (`sources/mt5.py`) so commands like `schema` work on machines without the `MetaTrader5` package installed.
 - Tests use a fake `DataSource` injected in place of `MT5Source` — never mock the `MetaTrader5` package directly.
 - After changing commands, architecture, or gotchas, update both `README.md` and `CLAUDE.md` in the same change.
@@ -271,7 +271,7 @@ uv run mt5-pnl-exporter schema
 - [ ] **Step 2: Render check**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 gh api /markdown -f mode=gfm -f context=tanem/mt5-pnl-exporter \
   -F text=@CONTRIBUTING.md > /tmp/contributing-md-rendered.html
 ```
@@ -281,8 +281,8 @@ Expected: HTML output produced, exit 0. Verify the three `bash` code blocks each
 - [ ] **Step 3: Commit**
 
 ```bash
-git -C /Users/tane/Code/mt5-pnl-exporter add CONTRIBUTING.md
-git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs: add CONTRIBUTING.md (setup + conventions)"
+git -C <repo-root> add CONTRIBUTING.md
+git -C <repo-root> commit -m "docs: add CONTRIBUTING.md (setup + conventions)"
 ```
 
 ---
@@ -290,17 +290,17 @@ git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs: add CONTRIBUTING.md (s
 ### Task 5: Rewrite README.md
 
 **Files:**
-- Modify: `/Users/tane/Code/mt5-pnl-exporter/README.md` (full replacement)
+- Modify: `<repo-root>/README.md` (full replacement)
 
 The largest task. Replaces the current 104-line README with the art-of-readme-structured version. Section order: title/badges/tagline/family diagram/intro → Contents → Why → Install → Quick start → Commands → Configuration → How it works → Schema → Snapshot size → Threat model → Contributing → Licence.
 
 - [ ] **Step 1: Read the current README**
 
-Use Read on `/Users/tane/Code/mt5-pnl-exporter/README.md`. The unchanged sections (Schema, Snapshot size, Threat model) need their content carried over verbatim — confirm by reading.
+Use Read on `<repo-root>/README.md`. The unchanged sections (Schema, Snapshot size, Threat model) need their content carried over verbatim — confirm by reading.
 
 - [ ] **Step 2: Write the new README**
 
-Use the Write tool on `/Users/tane/Code/mt5-pnl-exporter/README.md` with this exact content:
+Use the Write tool on `<repo-root>/README.md` with this exact content:
 
 `````markdown
 # mt5-pnl-exporter
@@ -492,7 +492,7 @@ MIT — see [LICENSE](LICENSE).
 
 - [ ] **Step 3: Visually verify the two ASCII diagrams locally**
 
-Open `/Users/tane/Code/mt5-pnl-exporter/README.md` in any monospace viewer. Confirm:
+Open `<repo-root>/README.md` in any monospace viewer. Confirm:
 - The family-of-tools diagram (top) has the three boxes aligned, the `▲` and `┴` connectors line up, and "Windows host" sits directly under "mt5-pnl-exporter".
 - The pipeline diagram (in How it works) has the arrows in line and the second/third lines do not overflow.
 
@@ -501,7 +501,7 @@ If any visual issue, fix the spacing in the README (small character-by-character
 - [ ] **Step 4: Render check against GitHub**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 gh api /markdown -f mode=gfm -f context=tanem/mt5-pnl-exporter \
   -F text=@README.md > /tmp/readme-rendered.html
 ```
@@ -518,8 +518,8 @@ Flag any visual issues for human review before proceeding.
 - [ ] **Step 5: Commit**
 
 ```bash
-git -C /Users/tane/Code/mt5-pnl-exporter add README.md
-git -C /Users/tane/Code/mt5-pnl-exporter commit -m "docs(readme): rewrite to art-of-readme structure for 1.0"
+git -C <repo-root> add README.md
+git -C <repo-root> commit -m "docs(readme): rewrite to art-of-readme structure for 1.0"
 ```
 
 ---
@@ -534,7 +534,7 @@ Even though no code was touched, a quick run of the existing checks confirms not
 - [ ] **Step 1: Verify the test suite, lint, and types still pass**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 uv run pytest
 uv run ruff check src/ tests/
 uv run ruff format --check src/ tests/
@@ -546,8 +546,8 @@ Expected: all four commands exit 0. `pytest` shows coverage ≥ 95% with all tes
 - [ ] **Step 2: Review the full diff against `main`**
 
 ```bash
-git -C /Users/tane/Code/mt5-pnl-exporter log --oneline main..phase-1b-cycle-5
-git -C /Users/tane/Code/mt5-pnl-exporter diff --stat main..phase-1b-cycle-5
+git -C <repo-root> log --oneline main..phase-1b-cycle-5
+git -C <repo-root> diff --stat main..phase-1b-cycle-5
 ```
 
 Expected: commits from Tasks 1–5 plus the spec commit (`de99dcb`). Files changed: at minimum `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, `docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md`, plus `docs/superpowers/specs/2026-06-03-phase-1b-cycle-5-design.md` (from the spec commit) and this plan file. `CLAUDE.md` may or may not be in the list depending on Task 1's audit result.
@@ -555,7 +555,7 @@ Expected: commits from Tasks 1–5 plus the spec commit (`de99dcb`). Files chang
 - [ ] **Step 3: Push the branch**
 
 ```bash
-git -C /Users/tane/Code/mt5-pnl-exporter push -u origin phase-1b-cycle-5
+git -C <repo-root> push -u origin phase-1b-cycle-5
 ```
 
 Expected: push succeeds; remote branch tracking set up.

@@ -6,7 +6,7 @@
 
 **Architecture:** The code patches are contained inside `src/mt5_pnl_exporter/secrets.py` and exercised through `tests/test_secrets.py`; no other module changes. The audit doc cites the patch commit SHA so a reader can browse from finding to fix. The threat-model section lives in `README.md` (one well-bounded section between `## Snapshot size` and `## Status`); the Windows-host reframe is a small set of in-place wording edits across `README.md` and `CLAUDE.md` with no structural change. Three implementation tasks land in order — code first, docs second, audit third — so the audit can quote the code commit's SHA. A fourth task verifies the branch and opens the draft PR.
 
-**Tech Stack:** Python 3.12, pydantic 2, Typer, pytest with coverage, ruff, mypy, uv. GitHub CLI (`gh`) for the PR step and the markdown render check. Working directory throughout this plan: `/Users/tane/Code/mt5-pnl-exporter`.
+**Tech Stack:** Python 3.12, pydantic 2, Typer, pytest with coverage, ruff, mypy, uv. GitHub CLI (`gh`) for the PR step and the markdown render check. Working directory throughout this plan: `<repo-root>`.
 
 **Reference spec:** [`docs/superpowers/specs/2026-06-01-phase-1b-cycle-3-design.md`](../specs/2026-06-01-phase-1b-cycle-3-design.md).
 
@@ -49,7 +49,7 @@ No new top-level files, no new dependencies, no schema changes.
 - [ ] **Step 1: Create and check out the working branch**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git fetch origin
 git checkout -b phase-1b-cycle-3 origin/main
 git log --oneline -1

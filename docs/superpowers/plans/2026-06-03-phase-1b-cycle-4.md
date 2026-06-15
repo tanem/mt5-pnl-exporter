@@ -6,7 +6,7 @@
 
 **Architecture:** All the code lives in `src/mt5_pnl_exporter/snapshot.py`: three new module-level constants (`SCHEMA_VERSION`, `_MAJOR`, `_MINOR`), one new private helper (`_parse_version`), and a rewritten version check inside `read()`. The pydantic `Snapshot.schema_version` field tightens from `Literal[2]` to `Literal["1.0"]`. The schema file is regenerated. Tests live in `tests/test_snapshot.py` — six new tests plus two reworked existing ones. Three small touches to `pyproject.toml`, `README.md`, and `CLAUDE.md` round out the cycle.
 
-**Tech Stack:** Python 3.12, pydantic 2, Typer, pytest with coverage, ruff, mypy, uv. GitHub CLI (`gh`) for the PR step and the markdown render check. Working directory throughout this plan: `/Users/tane/Code/mt5-pnl-exporter`.
+**Tech Stack:** Python 3.12, pydantic 2, Typer, pytest with coverage, ruff, mypy, uv. GitHub CLI (`gh`) for the PR step and the markdown render check. Working directory throughout this plan: `<repo-root>`.
 
 **Reference spec:** [`docs/superpowers/specs/2026-06-02-phase-1b-cycle-4-design.md`](../specs/2026-06-02-phase-1b-cycle-4-design.md).
 
@@ -57,7 +57,7 @@ No new files, no new dependencies, no other modules touched.
 - [ ] **Step 1: Create and check out the branch**
 
 ```bash
-cd /Users/tane/Code/mt5-pnl-exporter
+cd <repo-root>
 git fetch origin
 git checkout -b phase-1b-cycle-4 origin/main
 git log --oneline -1
