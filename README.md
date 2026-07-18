@@ -206,7 +206,9 @@ Schema version stamping is `major.minor` (`SCHEMA_VERSION = "1.1"`). Readers acc
 
 ## Snapshot size
 
-The snapshot stores one record per closed deal, so it grows with trading volume. Rough sizing: ~350 bytes per closed-deal record. Ten accounts with two years of 50-deals-per-day-per-account history (~250 trading days/year) is around 90 MB; busier setups (200 deals/day) reach ~350 MB. Each `export` gzips the JSON before encrypting, so the on-disk file is roughly an order of magnitude smaller — the 350 MB worst case lands at ~35 MB on disk, which is what sync services (Dropbox, Syncthing) see.
+The snapshot stores one record per deal and one per order, so it grows with trading volume. As of schema 1.1 a single round-trip trade contributes several records: an opening deal (`entry_deals`) and a closing deal (`closed_deals`), plus the orders behind them (`orders`) - usually the order that opened the position and the one that closed it. Strategies that place pending orders which are later cancelled or rejected add further order records with no matching deal. The `symbols` list is negligible - one small record per distinct symbol traded.
+
+Rough sizing: ~350 bytes per deal record and ~450 bytes per order record, so a round-trip trade costs roughly 1.5 KB - about four times the pre-1.1 closing-deal-only figure. Ten accounts with two years of 50-trades-per-day-per-account history (~250 trading days/year) is around 350 MB; busier setups (200 trades/day) reach ~1.4 GB. Each `export` gzips the JSON before encrypting, so the on-disk file is roughly an order of magnitude smaller - the ~1.4 GB worst case lands at ~140 MB on disk, which is what sync services (Dropbox, Syncthing) see.
 
 ## Threat model
 
