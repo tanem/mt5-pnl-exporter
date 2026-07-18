@@ -22,7 +22,9 @@ from mt5_pnl_exporter.snapshot import (
     CashFlow,
     ClosedDeal,
     OpenPosition,
+    Order,
     Snapshot,
+    SymbolInfo,
 )
 from mt5_pnl_exporter.sources.base import AccountInfo
 
@@ -44,12 +46,18 @@ class _FakeSource:
         closed_deals: dict[int, list[ClosedDeal]] | None = None,
         open_positions: dict[int, list[OpenPosition]] | None = None,
         cash_flows: dict[int, list[CashFlow]] | None = None,
+        entry_deals: dict[int, list[ClosedDeal]] | None = None,
+        orders: dict[int, list[Order]] | None = None,
+        symbols: dict[int, list[SymbolInfo]] | None = None,
         fail_logins: set[int] | None = None,
     ) -> None:
         self._accounts = accounts or {}
         self._closed = closed_deals or {}
         self._open = open_positions or {}
         self._flows = cash_flows or {}
+        self._entry = entry_deals or {}
+        self._orders = orders or {}
+        self._symbols = symbols or {}
         self._fail = fail_logins or set()
         self.shutdown_called = False
 
@@ -74,6 +82,18 @@ class _FakeSource:
     def fetch_cash_flows(self, login: int, _from: int, _to: int) -> list[CashFlow]:
         self._check(login)
         return self._flows.get(login, [])
+
+    def fetch_entry_deals(self, login: int, _from: int, _to: int) -> list[ClosedDeal]:
+        self._check(login)
+        return self._entry.get(login, [])
+
+    def fetch_orders(self, login: int, _from: int, _to: int) -> list[Order]:
+        self._check(login)
+        return self._orders.get(login, [])
+
+    def fetch_symbols(self, login: int, _from: int, _to: int) -> list[SymbolInfo]:
+        self._check(login)
+        return self._symbols.get(login, [])
 
     def shutdown(self) -> None:
         self.shutdown_called = True
@@ -175,11 +195,92 @@ def test_export_writes_snapshot_with_all_record_types(tmp_path, install_fake):
     assert result.exit_code == 0, result.output
 
     snap = snapshot.read(snap_path, TEST_PASSPHRASE)
-    assert snap.schema_version == "1.0"
+    assert snap.schema_version == "1.1"
     assert {a.login for a in snap.accounts} == {1234567, 7654321}
     assert len(snap.closed_deals) == 5
     assert len(snap.open_positions) == 2
     assert len(snap.cash_flows) == 2
+
+
+def test_export_includes_entry_deals_orders_symbols(tmp_path, install_fake):
+    cfg_path = tmp_path / "config.yaml"
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    _write_cfg(cfg_path, str(snap_path), [("Trend EA", 1234567)])
+    os.chmod(cfg_path, 0o600)
+
+    entry = ClosedDeal(
+        account=1234567,
+        ticket=10,
+        order=100,
+        position_id=1000,
+        time=1700000000,
+        time_msc=1700000000000,
+        type=0,
+        entry=0,
+        reason=0,
+        magic=0,
+        volume=0.1,
+        price=1.2345,
+        profit=0.0,
+        swap=0.0,
+        commission=0.0,
+        fee=0.0,
+        symbol="EURUSD",
+        comment="",
+        external_id="",
+    )
+    order = Order(
+        account=1234567,
+        ticket=100,
+        time_setup=1700000000,
+        time_setup_msc=1700000000000,
+        time_done=1700000100,
+        time_done_msc=1700000100000,
+        type=0,
+        state=4,
+        type_filling=0,
+        type_time=0,
+        magic=0,
+        position_id=1000,
+        position_by_id=0,
+        reason=3,
+        volume_initial=0.1,
+        volume_current=0.0,
+        price_open=1.2344,
+        price_current=1.2345,
+        price_stoplimit=0.0,
+        sl=0.0,
+        tp=0.0,
+        symbol="EURUSD",
+        comment="",
+        external_id="",
+    )
+    sym = SymbolInfo(name="EURUSD", point=0.00001, digits=5, trade_contract_size=100000.0)
+
+    fake = _FakeSource(
+        accounts={
+            1234567: AccountInfo(
+                login=1234567,
+                label="Trend EA",
+                currency="USD",
+                balance=1000.0,
+                equity=1000.0,
+            )
+        },
+        entry_deals={1234567: [entry]},
+        orders={1234567: [order]},
+        symbols={1234567: [sym]},
+    )
+    install_fake(fake)
+
+    result = runner.invoke(app, ["export", "--config", str(cfg_path)])
+    assert result.exit_code == 0, result.output
+
+    snap = snapshot.read(snap_path, TEST_PASSPHRASE)
+    assert [d.ticket for d in snap.entry_deals] == [10]
+    assert [o.ticket for o in snap.orders] == [100]
+    assert snap.orders[0].price_open == 1.2344
+    assert [s.name for s in snap.symbols] == ["EURUSD"]
 
 
 # ─── export error handling / carry-forward ───────────────────────────────────

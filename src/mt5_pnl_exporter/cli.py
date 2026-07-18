@@ -26,7 +26,9 @@ from mt5_pnl_exporter.snapshot import (
     CashFlow,
     ClosedDeal,
     OpenPosition,
+    Order,
     Snapshot,
+    SymbolInfo,
 )
 from mt5_pnl_exporter.sources.mt5 import MT5Source
 
@@ -101,6 +103,9 @@ def export(
     closed_deals_out: list[ClosedDeal] = []
     open_positions_out: list[OpenPosition] = []
     cash_flows_out: list[CashFlow] = []
+    entry_deals_out: list[ClosedDeal] = []
+    orders_out: list[Order] = []
+    symbols_by_name: dict[str, SymbolInfo] = {}
     error_count = 0
 
     for acct in cfg.accounts:
@@ -109,10 +114,17 @@ def export(
             deals = src.fetch_closed_deals(acct.login, epoch_from, epoch_to)
             flows = src.fetch_cash_flows(acct.login, epoch_from, epoch_to)
             positions = src.fetch_open_positions(acct.login)
+            entry = src.fetch_entry_deals(acct.login, epoch_from, epoch_to)
+            orders = src.fetch_orders(acct.login, epoch_from, epoch_to)
+            symbols = src.fetch_symbols(acct.login, epoch_from, epoch_to)
 
             closed_deals_out.extend(deals)
             cash_flows_out.extend(flows)
             open_positions_out.extend(positions)
+            entry_deals_out.extend(entry)
+            orders_out.extend(orders)
+            for sym in symbols:
+                symbols_by_name[sym.name] = sym
             accounts_out.append(
                 AccountSnapshot(
                     login=acct.login,
@@ -126,7 +138,8 @@ def export(
             )
             log.info(
                 f"[export] {acct.label} ({acct.login}): "
-                f"{len(deals)} closed deals, {len(positions)} open, "
+                f"{len(deals)} closed deals, {len(entry)} entries, "
+                f"{len(orders)} orders, {len(positions)} open, "
                 f"{len(flows)} cash flows  OK"
             )
         except Exception as exc:
@@ -160,6 +173,9 @@ def export(
             closed_deals=closed_deals_out,
             open_positions=open_positions_out,
             cash_flows=cash_flows_out,
+            entry_deals=entry_deals_out,
+            orders=orders_out,
+            symbols=list(symbols_by_name.values()),
         )
         snapshot.write(snap_path, snap, encryption_passphrase)
         log.info(f"[export] wrote {snap_path}  ({now.strftime('%Y-%m-%d %H:%M')})")
