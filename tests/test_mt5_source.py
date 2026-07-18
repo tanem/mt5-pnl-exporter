@@ -23,6 +23,7 @@ def _install_fake_mt5(
     history_total_values: list[int] | None = None,
     history_deals: list | None = None,
     positions: list | None = None,
+    orders: list | None = None,
 ) -> types.ModuleType:
     """Register a fake MetaTrader5 module so MT5Source can import it."""
     fake = types.ModuleType("MetaTrader5")
@@ -57,6 +58,10 @@ def _install_fake_mt5(
         fake.calls.append(("positions_get", args, kwargs))  # type: ignore[attr-defined]
         return list(positions or [])
 
+    def history_orders_get(*args: Any, **kwargs: Any) -> list:
+        fake.calls.append(("history_orders_get", args, kwargs))  # type: ignore[attr-defined]
+        return list(orders or [])
+
     class _AccountInfo:
         currency = "USD"
         balance = 1000.0
@@ -73,6 +78,7 @@ def _install_fake_mt5(
     fake.history_deals_get = history_deals_get  # type: ignore[attr-defined]
     fake.positions_get = positions_get  # type: ignore[attr-defined]
     fake.account_info = account_info  # type: ignore[attr-defined]
+    fake.history_orders_get = history_orders_get  # type: ignore[attr-defined]
 
     sys.modules["MetaTrader5"] = fake
     return fake
@@ -103,6 +109,37 @@ def _make_deal(**kwargs: Any) -> types.SimpleNamespace:
         swap=0.0,
         commission=0.0,
         fee=0.0,
+        symbol="",
+        comment="",
+        external_id="",
+    )
+    defaults.update(kwargs)
+    return types.SimpleNamespace(**defaults)
+
+
+def _make_order(**kwargs: Any) -> types.SimpleNamespace:
+    """Build a fake MT5 TradeOrder-shaped record with default zero/empty fields."""
+    defaults = dict(
+        ticket=0,
+        time_setup=0,
+        time_setup_msc=0,
+        time_done=0,
+        time_done_msc=0,
+        type=0,
+        state=0,
+        type_filling=0,
+        type_time=0,
+        magic=0,
+        position_id=0,
+        position_by_id=0,
+        reason=0,
+        volume_initial=0.0,
+        volume_current=0.0,
+        price_open=0.0,
+        price_current=0.0,
+        price_stoplimit=0.0,
+        sl=0.0,
+        tp=0.0,
         symbol="",
         comment="",
         external_id="",
@@ -767,5 +804,107 @@ def test_history_sync_slow_log_is_emitted(monkeypatch, caplog):
         assert any(
             "history sync" in r.message and "still in progress" in r.message for r in caplog.records
         )
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
+# ── fetch_orders() ───────────────────────────────────────────────────────────
+
+
+def test_fetch_orders_copies_every_field():
+    """All TradeOrder fields land on Order unchanged, plus account=login. All states kept."""
+    order = _make_order(
+        ticket=555,
+        time_setup=1700000000,
+        time_setup_msc=1700000000123,
+        time_done=1700000100,
+        time_done_msc=1700000100456,
+        type=0,
+        state=4,
+        type_filling=1,
+        type_time=0,
+        magic=42,
+        position_id=987654,
+        position_by_id=0,
+        reason=3,
+        volume_initial=0.10,
+        volume_current=0.0,
+        price_open=1.23456,
+        price_current=1.23460,
+        price_stoplimit=0.0,
+        sl=1.2300,
+        tp=1.2400,
+        symbol="EURUSD",
+        comment="req",
+        external_id="ext-ord-1",
+    )
+    _install_fake_mt5(orders=[order])
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        result = src.fetch_orders(514248, 0, 1)
+        assert len(result) == 1
+        o = result[0]
+        assert o.account == 514248
+        assert o.ticket == 555
+        assert o.time_setup_msc == 1700000000123
+        assert o.time_done_msc == 1700000100456
+        assert o.state == 4
+        assert o.type_filling == 1
+        assert o.position_id == 987654
+        assert o.volume_initial == 0.10
+        assert o.price_open == 1.23456
+        assert o.price_current == 1.23460
+        assert o.sl == 1.2300
+        assert o.tp == 1.2400
+        assert o.symbol == "EURUSD"
+        assert o.comment == "req"
+        assert o.external_id == "ext-ord-1"
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
+def test_fetch_orders_returns_empty_when_none_and_no_error():
+    fake = _install_fake_mt5()
+    fake.history_orders_get = lambda *a, **k: None  # type: ignore[attr-defined]
+    fake.last_error = lambda: (1, "ERR_SUCCESS")  # type: ignore[attr-defined]
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        assert src.fetch_orders(514248, 0, 1) == []
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
+def test_fetch_orders_raises_when_none_and_mt5_error():
+    fake = _install_fake_mt5()
+    fake.history_orders_get = lambda *a, **k: None  # type: ignore[attr-defined]
+    fake.last_error = lambda: (-10004, "Invalid timeout")  # type: ignore[attr-defined]
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        with pytest.raises(RuntimeError, match="history_orders_get failed"):
+            src.fetch_orders(514248, 0, 1)
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
+def test_fetch_orders_cached_per_window():
+    """Two fetch_orders calls for one window hit MT5 once; shutdown clears the cache."""
+    fake = _install_fake_mt5(orders=[_make_order(ticket=1)])
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        src.fetch_orders(514248, 0, 1)
+        src.fetch_orders(514248, 0, 1)
+        get_calls = [c for c in fake.calls if c[0] == "history_orders_get"]
+        assert len(get_calls) == 1
+        assert src._orders_cache != {}
+        src.shutdown()
+        assert src._orders_cache == {}
     finally:
         sys.modules.pop("MetaTrader5", None)
