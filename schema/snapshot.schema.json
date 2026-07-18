@@ -377,12 +377,175 @@
       ],
       "title": "OpenPosition",
       "type": "object"
+    },
+    "Order": {
+      "additionalProperties": false,
+      "description": "One order \u2014 every field MT5's TradeOrder emits, plus `account`.\n\nOrders carry the requested price (`price_open`), the server-side setup and\ndone times (for latency analysis), and `state` (filled/cancelled/rejected).\nAll orders in the window are emitted, every state \u2014 not filtered to filled.",
+      "properties": {
+        "account": {
+          "title": "Account",
+          "type": "integer"
+        },
+        "ticket": {
+          "title": "Ticket",
+          "type": "integer"
+        },
+        "time_setup": {
+          "title": "Time Setup",
+          "type": "integer"
+        },
+        "time_setup_msc": {
+          "title": "Time Setup Msc",
+          "type": "integer"
+        },
+        "time_done": {
+          "title": "Time Done",
+          "type": "integer"
+        },
+        "time_done_msc": {
+          "title": "Time Done Msc",
+          "type": "integer"
+        },
+        "type": {
+          "title": "Type",
+          "type": "integer"
+        },
+        "state": {
+          "title": "State",
+          "type": "integer"
+        },
+        "type_filling": {
+          "title": "Type Filling",
+          "type": "integer"
+        },
+        "type_time": {
+          "title": "Type Time",
+          "type": "integer"
+        },
+        "magic": {
+          "title": "Magic",
+          "type": "integer"
+        },
+        "position_id": {
+          "title": "Position Id",
+          "type": "integer"
+        },
+        "position_by_id": {
+          "title": "Position By Id",
+          "type": "integer"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "integer"
+        },
+        "volume_initial": {
+          "title": "Volume Initial",
+          "type": "number"
+        },
+        "volume_current": {
+          "title": "Volume Current",
+          "type": "number"
+        },
+        "price_open": {
+          "title": "Price Open",
+          "type": "number"
+        },
+        "price_current": {
+          "title": "Price Current",
+          "type": "number"
+        },
+        "price_stoplimit": {
+          "title": "Price Stoplimit",
+          "type": "number"
+        },
+        "sl": {
+          "title": "Sl",
+          "type": "number"
+        },
+        "tp": {
+          "title": "Tp",
+          "type": "number"
+        },
+        "symbol": {
+          "title": "Symbol",
+          "type": "string"
+        },
+        "comment": {
+          "title": "Comment",
+          "type": "string"
+        },
+        "external_id": {
+          "title": "External Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "account",
+        "ticket",
+        "time_setup",
+        "time_setup_msc",
+        "time_done",
+        "time_done_msc",
+        "type",
+        "state",
+        "type_filling",
+        "type_time",
+        "magic",
+        "position_id",
+        "position_by_id",
+        "reason",
+        "volume_initial",
+        "volume_current",
+        "price_open",
+        "price_current",
+        "price_stoplimit",
+        "sl",
+        "tp",
+        "symbol",
+        "comment",
+        "external_id"
+      ],
+      "title": "Order",
+      "type": "object"
+    },
+    "SymbolInfo": {
+      "additionalProperties": false,
+      "description": "Minimal per-symbol metadata for converting price gaps to points.\n\nOnly the fields that are stable at export time \u2014 the rest of MT5's\nsymbol_info is live market state (bid/ask/spread) meaningless in a snapshot.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "point": {
+          "title": "Point",
+          "type": "number"
+        },
+        "digits": {
+          "title": "Digits",
+          "type": "integer"
+        },
+        "trade_contract_size": {
+          "title": "Trade Contract Size",
+          "type": "number"
+        }
+      },
+      "required": [
+        "name",
+        "point",
+        "digits",
+        "trade_contract_size"
+      ],
+      "title": "SymbolInfo",
+      "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "1.0",
+      "enum": [
+        "1.0",
+        "1.1"
+      ],
       "title": "Schema Version",
       "type": "string"
     },
@@ -416,6 +579,27 @@
         "$ref": "#/$defs/CashFlow"
       },
       "title": "Cash Flows",
+      "type": "array"
+    },
+    "entry_deals": {
+      "items": {
+        "$ref": "#/$defs/ClosedDeal"
+      },
+      "title": "Entry Deals",
+      "type": "array"
+    },
+    "orders": {
+      "items": {
+        "$ref": "#/$defs/Order"
+      },
+      "title": "Orders",
+      "type": "array"
+    },
+    "symbols": {
+      "items": {
+        "$ref": "#/$defs/SymbolInfo"
+      },
+      "title": "Symbols",
       "type": "array"
     }
   },
