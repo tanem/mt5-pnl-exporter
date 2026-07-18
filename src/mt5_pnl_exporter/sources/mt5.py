@@ -10,6 +10,7 @@ from typing import Any
 from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition
 from mt5_pnl_exporter.sources.base import (
     BALANCE_FAMILY_TYPES,
+    DEAL_ENTRY_IN,
     DEAL_ENTRY_INOUT,
     DEAL_ENTRY_OUT,
     DEAL_ENTRY_OUT_BY,
@@ -127,6 +128,39 @@ class MT5Source:
             if d.type in BALANCE_FAMILY_TYPES:
                 continue
             if d.entry not in (DEAL_ENTRY_OUT, DEAL_ENTRY_INOUT, DEAL_ENTRY_OUT_BY):
+                continue
+            out.append(
+                ClosedDeal(
+                    account=login,
+                    ticket=int(d.ticket),
+                    order=int(d.order),
+                    position_id=int(d.position_id),
+                    time=int(d.time),
+                    time_msc=int(d.time_msc),
+                    type=int(d.type),
+                    entry=int(d.entry),
+                    reason=int(d.reason),
+                    magic=int(d.magic),
+                    volume=float(d.volume),
+                    price=float(d.price),
+                    profit=float(d.profit),
+                    swap=float(d.swap),
+                    commission=float(d.commission),
+                    fee=float(getattr(d, "fee", 0.0)),
+                    symbol=str(d.symbol),
+                    comment=str(d.comment),
+                    external_id=str(d.external_id),
+                )
+            )
+        return out
+
+    def fetch_entry_deals(self, login: int, date_from: int, date_to: int) -> list[ClosedDeal]:
+        raw = self._get_history_raw(login, date_from, date_to)
+        out: list[ClosedDeal] = []
+        for d in raw:
+            if d.type in BALANCE_FAMILY_TYPES:
+                continue
+            if d.entry != DEAL_ENTRY_IN:
                 continue
             out.append(
                 ClosedDeal(

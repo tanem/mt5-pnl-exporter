@@ -420,6 +420,55 @@ def test_fetch_cash_flows_keeps_only_balance_family():
         sys.modules.pop("MetaTrader5", None)
 
 
+def test_fetch_entry_deals_keeps_only_opening_non_balance():
+    """Only DEAL_ENTRY_IN, non-balance deals land in entry_deals."""
+    from mt5_pnl_exporter.sources.base import (
+        DEAL_ENTRY_IN,
+        DEAL_ENTRY_OUT,
+        DEAL_TYPE_BALANCE,
+    )
+
+    DEAL_TYPE_BUY = 0
+    deals = [
+        _make_deal(ticket=1, type=DEAL_TYPE_BUY, entry=DEAL_ENTRY_IN, price=1.2345),  # kept
+        _make_deal(ticket=2, type=DEAL_TYPE_BUY, entry=DEAL_ENTRY_OUT),  # dropped — closing
+        _make_deal(ticket=3, type=DEAL_TYPE_BALANCE, entry=DEAL_ENTRY_IN),  # dropped — balance
+    ]
+    _install_fake_mt5(history_deals=deals)
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        result = src.fetch_entry_deals(514248, 0, 1)
+        assert [d.ticket for d in result] == [1]
+        assert result[0].account == 514248
+        assert result[0].price == 1.2345
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
+def test_fetch_entry_deals_shares_history_round_trip():
+    """fetch_closed_deals then fetch_entry_deals for one window hits MT5 once."""
+    DEAL_TYPE_BUY = 0
+    DEAL_ENTRY_IN = 0
+    DEAL_ENTRY_OUT = 1
+    deals = [
+        _make_deal(ticket=1, type=DEAL_TYPE_BUY, entry=DEAL_ENTRY_IN),
+        _make_deal(ticket=2, type=DEAL_TYPE_BUY, entry=DEAL_ENTRY_OUT),
+    ]
+    fake = _install_fake_mt5(history_deals=deals)
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        src.fetch_closed_deals(514248, 0, 1)
+        src.fetch_entry_deals(514248, 0, 1)
+        get_calls = [c for c in fake.calls if c[0] == "history_deals_get"]
+        assert len(get_calls) == 1
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
 # ── field-copy fidelity ──────────────────────────────────────────────────────
 
 
