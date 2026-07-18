@@ -62,6 +62,14 @@ def _install_fake_mt5(
         fake.calls.append(("history_orders_get", args, kwargs))  # type: ignore[attr-defined]
         return list(orders or [])
 
+    def symbol_info(name: str) -> Any:
+        fake.calls.append(("symbol_info", (name,), {}))  # type: ignore[attr-defined]
+        table = {
+            "EURUSD": types.SimpleNamespace(point=0.00001, digits=5, trade_contract_size=100000.0),
+            "GBPUSD": types.SimpleNamespace(point=0.00001, digits=5, trade_contract_size=100000.0),
+        }
+        return table.get(name)
+
     class _AccountInfo:
         currency = "USD"
         balance = 1000.0
@@ -79,6 +87,7 @@ def _install_fake_mt5(
     fake.positions_get = positions_get  # type: ignore[attr-defined]
     fake.account_info = account_info  # type: ignore[attr-defined]
     fake.history_orders_get = history_orders_get  # type: ignore[attr-defined]
+    fake.symbol_info = symbol_info  # type: ignore[attr-defined]
 
     sys.modules["MetaTrader5"] = fake
     return fake
@@ -906,5 +915,56 @@ def test_fetch_orders_cached_per_window():
         assert src._orders_cache != {}
         src.shutdown()
         assert src._orders_cache == {}
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
+# ── fetch_symbols() ──────────────────────────────────────────────────────────
+
+
+def test_fetch_symbols_collects_distinct_traded_symbols():
+    """One SymbolInfo per distinct symbol across deals and orders; one symbol_info call each."""
+    DEAL_TYPE_BUY = 0
+    DEAL_ENTRY_OUT = 1
+    deals = [
+        _make_deal(ticket=1, type=DEAL_TYPE_BUY, entry=DEAL_ENTRY_OUT, symbol="EURUSD"),
+        _make_deal(ticket=2, type=DEAL_TYPE_BUY, entry=DEAL_ENTRY_OUT, symbol="EURUSD"),
+    ]
+    orders = [_make_order(ticket=9, symbol="GBPUSD")]
+    fake = _install_fake_mt5(history_deals=deals, orders=orders)
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        result = src.fetch_symbols(514248, 0, 1)
+        by_name = {s.name: s for s in result}
+        assert set(by_name) == {"EURUSD", "GBPUSD"}
+        assert by_name["EURUSD"].point == 0.00001
+        assert by_name["EURUSD"].digits == 5
+        assert by_name["EURUSD"].trade_contract_size == 100000.0
+        info_calls = [c for c in fake.calls if c[0] == "symbol_info"]
+        assert sorted(c[1][0] for c in info_calls) == ["EURUSD", "GBPUSD"]
+    finally:
+        sys.modules.pop("MetaTrader5", None)
+
+
+def test_fetch_symbols_skips_empty_and_unknown_symbols():
+    """Balance deals (empty symbol) and symbols MT5 can't resolve are skipped."""
+    DEAL_TYPE_BUY = 0
+    DEAL_ENTRY_OUT = 1
+    from mt5_pnl_exporter.sources.base import DEAL_TYPE_BALANCE
+
+    deals = [
+        _make_deal(ticket=1, type=DEAL_TYPE_BALANCE, symbol=""),  # empty symbol — skipped
+        _make_deal(ticket=2, type=DEAL_TYPE_BUY, entry=DEAL_ENTRY_OUT, symbol="XAUUSD"),  # unknown
+        _make_deal(ticket=3, type=DEAL_TYPE_BUY, entry=DEAL_ENTRY_OUT, symbol="EURUSD"),
+    ]
+    _install_fake_mt5(history_deals=deals)
+    try:
+        from mt5_pnl_exporter.sources.mt5 import MT5Source
+
+        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        result = src.fetch_symbols(514248, 0, 1)
+        assert [s.name for s in result] == ["EURUSD"]
     finally:
         sys.modules.pop("MetaTrader5", None)

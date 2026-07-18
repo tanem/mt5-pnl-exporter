@@ -7,7 +7,7 @@ import logging
 import time
 from typing import Any
 
-from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition, Order
+from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition, Order, SymbolInfo
 from mt5_pnl_exporter.sources.base import (
     BALANCE_FAMILY_TYPES,
     DEAL_ENTRY_IN,
@@ -173,6 +173,31 @@ class MT5Source:
                     symbol=str(o.symbol),
                     comment=str(o.comment),
                     external_id=str(o.external_id),
+                )
+            )
+        return out
+
+    def fetch_symbols(self, login: int, date_from: int, date_to: int) -> list[SymbolInfo]:
+        deals = self._get_history_raw(login, date_from, date_to)
+        orders = self._get_orders_raw(login, date_from, date_to)
+        names: list[str] = []
+        seen: set[str] = set()
+        for rec in (*deals, *orders):
+            name = str(rec.symbol)
+            if name and name not in seen:
+                seen.add(name)
+                names.append(name)
+        out: list[SymbolInfo] = []
+        for name in names:
+            info = self._mt5.symbol_info(name)
+            if info is None:
+                continue
+            out.append(
+                SymbolInfo(
+                    name=name,
+                    point=float(info.point),
+                    digits=int(info.digits),
+                    trade_contract_size=float(info.trade_contract_size),
                 )
             )
         return out
