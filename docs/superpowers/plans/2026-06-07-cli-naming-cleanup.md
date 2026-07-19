@@ -93,7 +93,7 @@ In `tests/test_cli.py` around lines 370-375 (the spy), change every `fake.accoun
 
 Replace `src.account_info(` with `src.fetch_account_info(` at every call site (lines 149, 169, 170, 188, 201, 209, 222, 224, 639, 651). Rename the test function `test_account_info_raises_when_mt5_returns_none` → `test_fetch_account_info_raises_when_mt5_returns_none` (line 631).
 
-**Leave untouched** in this file: `def account_info()` (line 65) and `fake.account_info = account_info` (line 75) — fake MT5 module; and the `match="account_info\\(\\) returned None for 514248"` string (line 638) — upstream API message.
+**Leave untouched** in this file: `def account_info()` (line 65) and `fake.account_info = account_info` (line 75) — fake MT5 module; and the `match="account_info\\(\\) returned None for 1000001"` string (line 638) — upstream API message.
 
 - [ ] **Step 6: Run the suite and type/lint checks**
 

@@ -625,16 +625,16 @@ def test_initialize_passes_credentials(fake_mt5):
     """First call must pass login/password/server to initialize(), not just path."""
     from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-    src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-    src.account_info(514248)
+    src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+    src.account_info(1000001)
 
     inits = [c for c in fake_mt5.calls if c[0] == "initialize"]
     assert len(inits) == 1
     _, args, kwargs = inits[0]
     assert args == ("C:\\fake\\terminal64.exe",)
-    assert kwargs["login"] == 514248
+    assert kwargs["login"] == 1000001
     assert kwargs["password"] == "inv-pw"
-    assert kwargs["server"] == "BlackBull-Live"
+    assert kwargs["server"] == "Broker-Server"
 
 
 def test_initialize_called_once_second_account_uses_login(fake_mt5):
@@ -643,19 +643,19 @@ def test_initialize_called_once_second_account_uses_login(fake_mt5):
 
     src = MT5Source(
         "C:\\fake\\terminal64.exe",
-        {514248: "inv-pw-a", 999999: "inv-pw-b"},
-        {514248: "BlackBull-Live", 999999: "BlackBull-Live"},
+        {1000001: "inv-pw-a", 2000002: "inv-pw-b"},
+        {1000001: "Broker-Server", 2000002: "Broker-Server"},
     )
-    src.account_info(514248)
-    src.account_info(999999)
+    src.account_info(1000001)
+    src.account_info(2000002)
 
     inits = [c for c in fake_mt5.calls if c[0] == "initialize"]
     logins = [c for c in fake_mt5.calls if c[0] == "login"]
 
     assert len(inits) == 1
     assert len(logins) == 1
-    assert logins[0][1] == (999999,)
-    assert logins[0][2] == {"password": "inv-pw-b", "server": "BlackBull-Live"}
+    assert logins[0][1] == (2000002,)
+    assert logins[0][2] == {"password": "inv-pw-b", "server": "Broker-Server"}
 
 
 def test_initialize_failure_surfaces_mt5_error(monkeypatch):
@@ -663,9 +663,9 @@ def test_initialize_failure_surfaces_mt5_error(monkeypatch):
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
         with pytest.raises(RuntimeError, match=r"MT5 initialize failed:.*-6"):
-            src.account_info(514248)
+            src.account_info(1000001)
     finally:
         sys.modules.pop("MetaTrader5", None)
 
@@ -676,17 +676,17 @@ def test_initialize_failure_surfaces_mt5_error(monkeypatch):
 def test_raises_when_server_missing(fake_mt5):
     from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-    src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {})
-    with pytest.raises(RuntimeError, match="No server configured for login 514248"):
-        src.account_info(514248)
+    src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {})
+    with pytest.raises(RuntimeError, match="No server configured for login 1000001"):
+        src.account_info(1000001)
 
 
 def test_raises_when_password_missing(fake_mt5):
     from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-    src = MT5Source("C:\\fake\\terminal64.exe", {}, {514248: "BlackBull-Live"})
-    with pytest.raises(RuntimeError, match="No investor password for login 514248"):
-        src.account_info(514248)
+    src = MT5Source("C:\\fake\\terminal64.exe", {}, {1000001: "Broker-Server"})
+    with pytest.raises(RuntimeError, match="No investor password for login 1000001"):
+        src.account_info(1000001)
 
 
 def test_login_failure_surfaces_mt5_error(monkeypatch):
@@ -696,12 +696,12 @@ def test_login_failure_surfaces_mt5_error(monkeypatch):
 
         src = MT5Source(
             "C:\\fake\\terminal64.exe",
-            {514248: "inv-pw-a", 999999: "inv-pw-b"},
-            {514248: "BlackBull-Live", 999999: "BlackBull-Live"},
+            {1000001: "inv-pw-a", 2000002: "inv-pw-b"},
+            {1000001: "Broker-Server", 2000002: "Broker-Server"},
         )
-        src.account_info(514248)
-        with pytest.raises(RuntimeError, match=r"MT5 login failed for 999999"):
-            src.account_info(999999)
+        src.account_info(1000001)
+        with pytest.raises(RuntimeError, match=r"MT5 login failed for 2000002"):
+            src.account_info(2000002)
     finally:
         sys.modules.pop("MetaTrader5", None)
 
@@ -716,8 +716,8 @@ def test_history_sync_waits_for_stability(monkeypatch):
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        src.fetch_closed_deals(514248, 0, 1)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        src.fetch_closed_deals(1000001, 0, 1)
 
         total_calls = [c for c in fake.calls if c[0] == "history_deals_total"]
         get_calls = [c for c in fake.calls if c[0] == "history_deals_get"]
@@ -736,8 +736,8 @@ def test_history_sync_zero_trades_returns_quickly(monkeypatch):
     try:
         from mt5_pnl_exporter.sources.mt5 import _HISTORY_SYNC_STABLE_POLLS, MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        result = src.fetch_closed_deals(514248, 0, 1)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        result = src.fetch_closed_deals(1000001, 0, 1)
 
         assert result == []
         total_calls = [c for c in fake.calls if c[0] == "history_deals_total"]
@@ -769,9 +769,9 @@ def test_history_sync_timeout_raises(monkeypatch):
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
         with pytest.raises(RuntimeError, match="history sync did not settle"):
-            src.fetch_closed_deals(514248, 0, 1)
+            src.fetch_closed_deals(1000001, 0, 1)
     finally:
         sys.modules.pop("MetaTrader5", None)
 
@@ -786,8 +786,8 @@ def test_fetch_closed_deals_returns_empty_when_none_and_no_error():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        result = src.fetch_closed_deals(514248, 0, 1)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        result = src.fetch_closed_deals(1000001, 0, 1)
         assert result == []
     finally:
         sys.modules.pop("MetaTrader5", None)
@@ -800,9 +800,9 @@ def test_fetch_closed_deals_raises_when_none_and_mt5_error():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
         with pytest.raises(RuntimeError, match="history_deals_get failed"):
-            src.fetch_closed_deals(514248, 0, 1)
+            src.fetch_closed_deals(1000001, 0, 1)
     finally:
         sys.modules.pop("MetaTrader5", None)
 
@@ -831,8 +831,8 @@ def test_fetch_closed_deals_keeps_only_closing_non_balance():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        result = src.fetch_closed_deals(514248, 0, 1)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        result = src.fetch_closed_deals(1000001, 0, 1)
         tickets = sorted(d.ticket for d in result)
         assert tickets == [3, 4]
     finally:
@@ -866,8 +866,8 @@ def test_fetch_cash_flows_keeps_only_balance_family():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        result = src.fetch_cash_flows(514248, 0, 1)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        result = src.fetch_cash_flows(1000001, 0, 1)
         tickets = sorted(d.ticket for d in result)
         assert tickets == [2, 3, 4, 5, 6, 7]
     finally:
@@ -905,12 +905,12 @@ def test_fetch_closed_deals_copies_every_field():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        result = src.fetch_closed_deals(514248, 0, 1)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        result = src.fetch_closed_deals(1000001, 0, 1)
 
         assert len(result) == 1
         d = result[0]
-        assert d.account == 514248
+        assert d.account == 1000001
         assert d.ticket == 987654321
         assert d.order == 12345
         assert d.position_id == 987654
@@ -960,12 +960,12 @@ def test_fetch_cash_flows_copies_every_field():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        result = src.fetch_cash_flows(514248, 0, 1)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        result = src.fetch_cash_flows(1000001, 0, 1)
 
         assert len(result) == 1
         c = result[0]
-        assert c.account == 514248
+        assert c.account == 1000001
         assert c.ticket == 111
         assert c.type == DEAL_TYPE_BALANCE
         assert c.profit == 5000.0
@@ -1003,12 +1003,12 @@ def test_fetch_open_positions_copies_every_field():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        result = src.fetch_open_positions(514248)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        result = src.fetch_open_positions(1000001)
 
         assert len(result) == 1
         p = result[0]
-        assert p.account == 514248
+        assert p.account == 1000001
         assert p.ticket == 555
         assert p.identifier == 555000
         assert p.time == 1700000000
@@ -1039,8 +1039,8 @@ def test_fetch_open_positions_handles_none():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        result = src.fetch_open_positions(514248)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        result = src.fetch_open_positions(1000001)
         assert result == []
     finally:
         sys.modules.pop("MetaTrader5", None)
@@ -1063,9 +1063,9 @@ def test_history_deals_get_cached_across_closed_and_cash_flow_calls():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        src.fetch_closed_deals(514248, 0, 1)
-        src.fetch_cash_flows(514248, 0, 1)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        src.fetch_closed_deals(1000001, 0, 1)
+        src.fetch_cash_flows(1000001, 0, 1)
 
         get_calls = [c for c in fake.calls if c[0] == "history_deals_get"]
         assert len(get_calls) == 1, f"expected 1 history_deals_get call, got {len(get_calls)}"
@@ -1081,12 +1081,12 @@ def test_history_deals_get_cache_keyed_by_login_and_window():
 
         src = MT5Source(
             "C:\\fake\\terminal64.exe",
-            {514248: "inv-pw", 999999: "inv-pw"},
-            {514248: "BlackBull-Live", 999999: "BlackBull-Live"},
+            {1000001: "inv-pw", 2000002: "inv-pw"},
+            {1000001: "Broker-Server", 2000002: "Broker-Server"},
         )
-        src.fetch_closed_deals(514248, 0, 100)
-        src.fetch_closed_deals(514248, 0, 200)  # different window
-        src.fetch_closed_deals(999999, 0, 100)  # different login
+        src.fetch_closed_deals(1000001, 0, 100)
+        src.fetch_closed_deals(1000001, 0, 200)  # different window
+        src.fetch_closed_deals(2000002, 0, 100)  # different login
 
         get_calls = [c for c in fake.calls if c[0] == "history_deals_get"]
         assert len(get_calls) == 3
@@ -1098,8 +1098,8 @@ def test_shutdown_clears_history_cache(fake_mt5):
     """shutdown() must clear the cache so a fresh poll re-fetches."""
     from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-    src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-    src.fetch_closed_deals(514248, 0, 1)
+    src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+    src.fetch_closed_deals(1000001, 0, 1)
     assert src._history_cache != {}
     src.shutdown()
     assert src._history_cache == {}
@@ -1114,9 +1114,9 @@ def test_account_info_raises_when_mt5_returns_none():
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-        with pytest.raises(RuntimeError, match="account_info\\(\\) returned None for 514248"):
-            src.account_info(514248)
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+        with pytest.raises(RuntimeError, match="account_info\\(\\) returned None for 1000001"):
+            src.account_info(1000001)
     finally:
         sys.modules.pop("MetaTrader5", None)
 
@@ -1127,8 +1127,8 @@ def test_account_info_raises_when_mt5_returns_none():
 def test_shutdown_calls_mt5_shutdown_when_initialized(fake_mt5):
     from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-    src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
-    src.account_info(514248)
+    src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
+    src.account_info(1000001)
     assert src._initialized
     src.shutdown()
     assert not src._initialized
@@ -1139,7 +1139,7 @@ def test_shutdown_calls_mt5_shutdown_when_initialized(fake_mt5):
 def test_shutdown_is_noop_when_not_initialized(fake_mt5):
     from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-    src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+    src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
     src.shutdown()
     shutdown_calls = [c for c in fake_mt5.calls if c[0] == "shutdown"]
     assert shutdown_calls == []
@@ -1166,9 +1166,9 @@ def test_history_sync_slow_log_is_emitted(monkeypatch, caplog):
     try:
         from mt5_pnl_exporter.sources.mt5 import MT5Source
 
-        src = MT5Source("C:\\fake\\terminal64.exe", {514248: "inv-pw"}, {514248: "BlackBull-Live"})
+        src = MT5Source("C:\\fake\\terminal64.exe", {1000001: "inv-pw"}, {1000001: "Broker-Server"})
         with caplog.at_level(logging.DEBUG, logger="mt5_pnl_exporter.sources.mt5"):
-            src.fetch_closed_deals(514248, 0, 1)
+            src.fetch_closed_deals(1000001, 0, 1)
         assert any(
             "history sync" in r.message and "still in progress" in r.message for r in caplog.records
         )
