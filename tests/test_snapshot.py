@@ -15,7 +15,9 @@ from mt5_pnl_exporter.snapshot import (
     CashFlow,
     ClosedDeal,
     OpenPosition,
+    Order,
     Snapshot,
+    SymbolInfo,
     _parse_version,
     read,
     write,
@@ -109,6 +111,39 @@ def _cash_flow(ticket: int = 1, amount: float = 1000.0) -> CashFlow:
     )
 
 
+def _order(ticket: int = 1) -> Order:
+    return Order(
+        account=1234567,
+        ticket=ticket,
+        time_setup=1700000000,
+        time_setup_msc=1700000000123,
+        time_done=1700000100,
+        time_done_msc=1700000100456,
+        type=0,
+        state=4,
+        type_filling=0,
+        type_time=0,
+        magic=42,
+        position_id=ticket * 100,
+        position_by_id=0,
+        reason=3,
+        volume_initial=0.10,
+        volume_current=0.0,
+        price_open=1.23456,
+        price_current=1.23460,
+        price_stoplimit=0.0,
+        sl=0.0,
+        tp=0.0,
+        symbol="EURUSD",
+        comment="",
+        external_id="",
+    )
+
+
+def _symbol_info(name: str = "EURUSD") -> SymbolInfo:
+    return SymbolInfo(name=name, point=0.00001, digits=5, trade_contract_size=100000.0)
+
+
 def _minimal_snapshot() -> Snapshot:
     return Snapshot(
         schema_version="1.0",
@@ -169,6 +204,57 @@ def test_written_file_is_not_plaintext_json(tmp_path):
     raw = snap_path.read_bytes()
     assert b"schema_version" not in raw
     assert b"EURUSD" not in raw
+
+
+def test_roundtrip_entry_deals_orders_symbols(tmp_path):
+    from mt5_pnl_exporter.snapshot import SCHEMA_VERSION, Snapshot
+
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    snap = Snapshot(
+        schema_version=SCHEMA_VERSION,
+        generated_at="2025-01-01T00:00:00Z",
+        accounts=[_account()],
+        closed_deals=[_closed_deal()],
+        open_positions=[_open_position()],
+        cash_flows=[_cash_flow()],
+        entry_deals=[_closed_deal(ticket=2)],
+        orders=[_order(ticket=3)],
+        symbols=[_symbol_info()],
+    )
+    write(snap_path, snap, PASSPHRASE)
+    result = read(snap_path, PASSPHRASE)
+    assert result.schema_version == "1.1"
+    assert [d.ticket for d in result.entry_deals] == [2]
+    assert [o.ticket for o in result.orders] == [3]
+    assert result.orders[0].price_open == 1.23456
+    assert result.orders[0].state == 4
+    assert [s.name for s in result.symbols] == ["EURUSD"]
+    assert result.symbols[0].point == 0.00001
+
+
+def test_read_accepts_legacy_1_0_snapshot_without_new_fields(tmp_path):
+    """A 1.0 payload missing entry_deals/orders/symbols reads with empty defaults."""
+    import gzip
+    import json
+
+    import pyrage
+
+    snap_path = tmp_path / "snapshot.json.gz.age"
+    payload = {
+        "schema_version": "1.0",
+        "generated_at": "2025-01-01T00:00:00Z",
+        "accounts": [],
+        "closed_deals": [],
+        "open_positions": [],
+        "cash_flows": [],
+    }
+    raw = json.dumps(payload).encode()
+    snap_path.write_bytes(pyrage.passphrase.encrypt(gzip.compress(raw), PASSPHRASE))
+    result = read(snap_path, PASSPHRASE)
+    assert result.schema_version == "1.0"
+    assert result.entry_deals == []
+    assert result.orders == []
+    assert result.symbols == []
 
 
 # ─── decryption errors ───────────────────────────────────────────────────────
@@ -319,10 +405,10 @@ def test_parse_version_rejects_wrong_shape():
 
 
 def test_read_rejects_future_minor(tmp_path):
-    """Stamp from a newer minor (1.1) is rejected by a 1.0 reader."""
+    """A newer minor (1.2) is still rejected by a 1.1 reader."""
     snap_path = tmp_path / "snapshot.json.gz.age"
     payload = {
-        "schema_version": "1.1",
+        "schema_version": "1.2",
         "generated_at": "2025-01-01T00:00:00Z",
         "accounts": [],
         "closed_deals": [],

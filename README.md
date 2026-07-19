@@ -194,11 +194,21 @@ age -d snapshot.json.gz.age | gunzip     # prompts for the passphrase, prints th
 
 The snapshot carries one record per closed deal (`ClosedDeal`), open position (`OpenPosition`), and balance-family deal — deposit, withdrawal, credit, charge, correction, bonus, commission (`CashFlow`). Plus one `AccountSnapshot` per account with balance, equity, currency, and the last-success/last-error stamps. No pre-aggregation — consumers slice the raw records however they want.
 
-Schema version stamping is `major.minor` (`SCHEMA_VERSION = "1.0"`). Readers accept the same major and any minor ≤ their own; minor bumps add optional fields, major bumps are breaking. Consumers vendor `schema/snapshot.schema.json` from a specific release.
+Three further lists support execution-quality analysis — comparing the price an order requested against the price a trade actually filled at:
+
+- `entry_deals` — opening (`DEAL_ENTRY_IN`) deals, the same shape as `closed_deals`. Pair an entry deal to a close by `position_id` to get the open fill price and time.
+- `orders` — order history for the export window, every state (filled, cancelled, rejected). Carries `price_open` (the requested price), `time_setup_msc` (when the order reached the server), `time_done_msc`, and `state`.
+- `symbols` — per-symbol `point`, `digits`, and `trade_contract_size` for the symbols traded in the window, so a price gap can be expressed in points rather than raw price units.
+
+Slippage in points is a consumer computation, not a snapshot field: `(order.price_open − entry_deal.price) ÷ symbol.point`, signed by trade direction.
+
+Schema version stamping is `major.minor` (`SCHEMA_VERSION = "1.1"`). Readers accept the same major and any minor ≤ their own; minor bumps add optional fields, major bumps are breaking. A `1.0` reader cannot read a `1.1` snapshot — consumers need a `1.1`-capable reader to see `entry_deals`, `orders`, and `symbols`. Consumers vendor `schema/snapshot.schema.json` from a specific release.
 
 ## Snapshot size
 
-The snapshot stores one record per closed deal, so it grows with trading volume. Rough sizing: ~350 bytes per closed-deal record. Ten accounts with two years of 50-deals-per-day-per-account history (~250 trading days/year) is around 90 MB; busier setups (200 deals/day) reach ~350 MB. Each `export` gzips the JSON before encrypting, so the on-disk file is roughly an order of magnitude smaller — the 350 MB worst case lands at ~35 MB on disk, which is what sync services (Dropbox, Syncthing) see.
+The snapshot stores one record per deal and one per order, so it grows with trading volume. As of schema 1.1 a single round-trip trade contributes several records: an opening deal (`entry_deals`) and a closing deal (`closed_deals`), plus the orders behind them (`orders`) - usually the order that opened the position and the one that closed it. Strategies that place pending orders which are later cancelled or rejected add further order records with no matching deal. The `symbols` list is negligible - one small record per distinct symbol traded.
+
+Rough sizing: ~350 bytes per deal record and ~450 bytes per order record, so a round-trip trade costs roughly 1.5 KB - about four times the pre-1.1 closing-deal-only figure. Ten accounts with two years of 50-trades-per-day-per-account history (~250 trading days/year) is around 350 MB; busier setups (200 trades/day) reach ~1.4 GB. Each `export` gzips the JSON before encrypting, so the on-disk file is roughly an order of magnitude smaller - the ~1.4 GB worst case lands at ~140 MB on disk, which is what sync services (Dropbox, Syncthing) see.
 
 ## Threat model
 

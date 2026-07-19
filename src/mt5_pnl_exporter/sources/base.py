@@ -6,7 +6,7 @@ from typing import Protocol, runtime_checkable
 
 from pydantic import BaseModel
 
-from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition
+from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition, Order, SymbolInfo
 
 # MT5 deal-entry constants (ENUM_DEAL_ENTRY: IN=0, OUT=1, INOUT=2, OUT_BY=3).
 # INOUT is a position reversal — one deal closes the old position and opens the
@@ -14,6 +14,7 @@ from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition
 DEAL_ENTRY_OUT = 1
 DEAL_ENTRY_INOUT = 2
 DEAL_ENTRY_OUT_BY = 3
+DEAL_ENTRY_IN = 0
 
 # MT5 deal-type constants
 # Trading deal types (used by ClosedDeal): 0 = buy, 1 = sell
@@ -50,6 +51,9 @@ class AccountInfo(BaseModel):
 class DataSource(Protocol):
     def fetch_account_info(self, login: int) -> AccountInfo: ...
     def fetch_closed_deals(self, login: int, date_from: int, date_to: int) -> list[ClosedDeal]: ...
+    def fetch_entry_deals(self, login: int, date_from: int, date_to: int) -> list[ClosedDeal]: ...
     def fetch_open_positions(self, login: int) -> list[OpenPosition]: ...
     def fetch_cash_flows(self, login: int, date_from: int, date_to: int) -> list[CashFlow]: ...
+    def fetch_orders(self, login: int, date_from: int, date_to: int) -> list[Order]: ...
+    def fetch_symbols(self, login: int, date_from: int, date_to: int) -> list[SymbolInfo]: ...
     def shutdown(self) -> None: ...

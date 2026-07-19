@@ -7,9 +7,10 @@ import logging
 import time
 from typing import Any
 
-from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition
+from mt5_pnl_exporter.snapshot import CashFlow, ClosedDeal, OpenPosition, Order, SymbolInfo
 from mt5_pnl_exporter.sources.base import (
     BALANCE_FAMILY_TYPES,
+    DEAL_ENTRY_IN,
     DEAL_ENTRY_INOUT,
     DEAL_ENTRY_OUT,
     DEAL_ENTRY_OUT_BY,
@@ -47,6 +48,8 @@ class MT5Source:
         # Cache the raw history_deals_get result by (login, date_from, date_to)
         # so back-to-back fetch_closed_deals + fetch_cash_flows hit MT5 once.
         self._history_cache: dict[tuple[int, int, int], list[Any]] = {}
+        # Order history cached per (login, date_from, date_to), same as deals.
+        self._orders_cache: dict[tuple[int, int, int], list[Any]] = {}
 
     def _connect(self, login: int) -> None:
         pw = self._passwords.get(login)
@@ -120,6 +123,85 @@ class MT5Source:
         self._history_cache[key] = result
         return result
 
+    def _get_orders_raw(self, login: int, date_from: int, date_to: int) -> list[Any]:
+        """Return the raw history_orders_get result for the window, cached."""
+        key = (login, date_from, date_to)
+        if key in self._orders_cache:
+            return self._orders_cache[key]
+
+        self._connect(login)
+        dt_from = datetime.datetime.fromtimestamp(date_from, tz=datetime.UTC)
+        dt_to = datetime.datetime.fromtimestamp(date_to, tz=datetime.UTC)
+        self._wait_history_synced(login, dt_from, dt_to)
+        raw = self._mt5.history_orders_get(dt_from, dt_to)
+        if raw is None:
+            code, msg = self._mt5.last_error()
+            if code != 1:  # 1 = ERR_SUCCESS / no orders in range
+                raise RuntimeError(f"history_orders_get failed for {login}: ({code}, {msg!r})")
+            raw = []
+        result = list(raw)
+        self._orders_cache[key] = result
+        return result
+
+    def fetch_orders(self, login: int, date_from: int, date_to: int) -> list[Order]:
+        raw = self._get_orders_raw(login, date_from, date_to)
+        out: list[Order] = []
+        for o in raw:
+            out.append(
+                Order(
+                    account=login,
+                    ticket=int(o.ticket),
+                    time_setup=int(o.time_setup),
+                    time_setup_msc=int(o.time_setup_msc),
+                    time_done=int(o.time_done),
+                    time_done_msc=int(o.time_done_msc),
+                    type=int(o.type),
+                    state=int(o.state),
+                    type_filling=int(o.type_filling),
+                    type_time=int(o.type_time),
+                    magic=int(o.magic),
+                    position_id=int(o.position_id),
+                    position_by_id=int(o.position_by_id),
+                    reason=int(o.reason),
+                    volume_initial=float(o.volume_initial),
+                    volume_current=float(o.volume_current),
+                    price_open=float(o.price_open),
+                    price_current=float(o.price_current),
+                    price_stoplimit=float(o.price_stoplimit),
+                    sl=float(o.sl),
+                    tp=float(o.tp),
+                    symbol=str(o.symbol),
+                    comment=str(o.comment),
+                    external_id=str(o.external_id),
+                )
+            )
+        return out
+
+    def fetch_symbols(self, login: int, date_from: int, date_to: int) -> list[SymbolInfo]:
+        deals = self._get_history_raw(login, date_from, date_to)
+        orders = self._get_orders_raw(login, date_from, date_to)
+        names: list[str] = []
+        seen: set[str] = set()
+        for rec in (*deals, *orders):
+            name = str(rec.symbol)
+            if name and name not in seen:
+                seen.add(name)
+                names.append(name)
+        out: list[SymbolInfo] = []
+        for name in names:
+            info = self._mt5.symbol_info(name)
+            if info is None:
+                continue
+            out.append(
+                SymbolInfo(
+                    name=name,
+                    point=float(info.point),
+                    digits=int(info.digits),
+                    trade_contract_size=float(info.trade_contract_size),
+                )
+            )
+        return out
+
     def fetch_closed_deals(self, login: int, date_from: int, date_to: int) -> list[ClosedDeal]:
         raw = self._get_history_raw(login, date_from, date_to)
         out: list[ClosedDeal] = []
@@ -127,6 +209,39 @@ class MT5Source:
             if d.type in BALANCE_FAMILY_TYPES:
                 continue
             if d.entry not in (DEAL_ENTRY_OUT, DEAL_ENTRY_INOUT, DEAL_ENTRY_OUT_BY):
+                continue
+            out.append(
+                ClosedDeal(
+                    account=login,
+                    ticket=int(d.ticket),
+                    order=int(d.order),
+                    position_id=int(d.position_id),
+                    time=int(d.time),
+                    time_msc=int(d.time_msc),
+                    type=int(d.type),
+                    entry=int(d.entry),
+                    reason=int(d.reason),
+                    magic=int(d.magic),
+                    volume=float(d.volume),
+                    price=float(d.price),
+                    profit=float(d.profit),
+                    swap=float(d.swap),
+                    commission=float(d.commission),
+                    fee=float(getattr(d, "fee", 0.0)),
+                    symbol=str(d.symbol),
+                    comment=str(d.comment),
+                    external_id=str(d.external_id),
+                )
+            )
+        return out
+
+    def fetch_entry_deals(self, login: int, date_from: int, date_to: int) -> list[ClosedDeal]:
+        raw = self._get_history_raw(login, date_from, date_to)
+        out: list[ClosedDeal] = []
+        for d in raw:
+            if d.type in BALANCE_FAMILY_TYPES:
+                continue
+            if d.entry != DEAL_ENTRY_IN:
                 continue
             out.append(
                 ClosedDeal(
@@ -235,3 +350,4 @@ class MT5Source:
             self._mt5.shutdown()
             self._initialized = False
         self._history_cache.clear()
+        self._orders_cache.clear()

@@ -16,11 +16,11 @@ from pathlib import Path
 from typing import Literal
 
 import pyrage
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 _MAJOR = 1
-_MINOR = 0
+_MINOR = 1
 
 
 def _parse_version(stamp: object) -> tuple[int, int]:
@@ -130,14 +130,66 @@ class CashFlow(BaseModel):
     external_id: str
 
 
+class Order(BaseModel):
+    """One order — every field MT5's TradeOrder emits, plus `account`.
+
+    Orders carry the requested price (`price_open`), the server-side setup and
+    done times (for latency analysis), and `state` (filled/cancelled/rejected).
+    All orders in the window are emitted, every state — not filtered to filled.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    account: int  # login — added by the exporter; MT5 orders don't carry it
+    ticket: int
+    time_setup: int  # Unix seconds — order reached the server
+    time_setup_msc: int  # Unix milliseconds
+    time_done: int  # Unix seconds — filled or cancelled
+    time_done_msc: int
+    type: int  # mt5 ORDER_TYPE_* (raw integer)
+    state: int  # mt5 ORDER_STATE_* (raw integer)
+    type_filling: int  # mt5 ORDER_FILLING_*
+    type_time: int  # mt5 ORDER_TIME_*
+    magic: int
+    position_id: int
+    position_by_id: int
+    reason: int  # mt5 ORDER_REASON_*
+    volume_initial: float
+    volume_current: float
+    price_open: float  # requested price
+    price_current: float
+    price_stoplimit: float
+    sl: float
+    tp: float
+    symbol: str
+    comment: str
+    external_id: str
+
+
+class SymbolInfo(BaseModel):
+    """Minimal per-symbol metadata for converting price gaps to points.
+
+    Only the fields that are stable at export time — the rest of MT5's
+    symbol_info is live market state (bid/ask/spread) meaningless in a snapshot.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    name: str
+    point: float
+    digits: int
+    trade_contract_size: float
+
+
 class Snapshot(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
-    schema_version: Literal["1.0"]
+    schema_version: Literal["1.0", "1.1"]
     generated_at: str
     accounts: list[AccountSnapshot]
     closed_deals: list[ClosedDeal]
     open_positions: list[OpenPosition]
     cash_flows: list[CashFlow]
+    entry_deals: list[ClosedDeal] = Field(default_factory=list)
+    orders: list[Order] = Field(default_factory=list)
+    symbols: list[SymbolInfo] = Field(default_factory=list)
 
 
 def write(path: Path, snap: Snapshot, passphrase: str) -> None:

@@ -43,7 +43,7 @@ Before publishing a new version, exercise a real MT5 export from your working tr
 6. Verify the snapshot decrypts and validates — this exercises the same `age → gzip → JSON` read path a consumer uses. The on-disk file is ciphertext, so opening it directly won't work; read it back via the API:
 
    ```bash
-   uv run python -c "from pathlib import Path; import mt5_pnl_exporter.snapshot as s, mt5_pnl_exporter.secrets as sec; snap = s.read(Path(r'<snapshot_path>'), sec.get_encryption_passphrase()); print(snap.generated_at, '|', len(snap.closed_deals), 'deals,', len(snap.open_positions), 'open,', len(snap.cash_flows), 'cash flows'); [print(a.login, a.label, a.balance, a.equity) for a in snap.accounts]"
+   uv run python -c "from pathlib import Path; import mt5_pnl_exporter.snapshot as s, mt5_pnl_exporter.secrets as sec; snap = s.read(Path(r'<snapshot_path>'), sec.get_encryption_passphrase()); print(snap.generated_at, '|', len(snap.closed_deals), 'deals,', len(snap.entry_deals), 'entries,', len(snap.orders), 'orders,', len(snap.open_positions), 'open,', len(snap.cash_flows), 'cash flows,', len(snap.symbols), 'symbols'); [print(a.login, a.label, a.balance, a.equity) for a in snap.accounts]"
    ```
 
    Replace `<snapshot_path>` with the value of `snapshot_path` from your `config.yaml`. The `r'...'` raw-string prefix keeps a Windows backslash path (e.g. `Z:\mt5-pnl-exporter\mt5.json.gz.age`) from being mangled by Python escape sequences. If it prints without raising, the file is structurally sound — `read()` reverses the pipeline and validates the full pydantic model.
