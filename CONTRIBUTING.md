@@ -109,4 +109,4 @@ A PyPI version is immutable once uploaded — the version number cannot be reuse
 
 ## Conventions
 
-See [`CLAUDE.md`](CLAUDE.md) — the canonical reference for coding style, architectural rules, and gotchas (British/Commonwealth English, no module-level `MetaTrader5` import, doc-sync rule, etc.). It's loaded automatically by Claude Code but reads as a normal project doc.
+See [`AGENTS.md`](AGENTS.md) — the canonical reference for coding style, architectural rules, and gotchas (British/Commonwealth English, no module-level `MetaTrader5` import, doc-sync rule, etc.). Coding agents load it automatically (Claude Code via the one-line `CLAUDE.md` import), but it reads as a normal project doc.

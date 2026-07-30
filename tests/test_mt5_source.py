@@ -1,6 +1,6 @@
 """Tests for MT5Source — the live data backend.
 
-CLAUDE.md prefers fixtures over mocking MT5, but the bugs fixed in
+AGENTS.md prefers fixtures over mocking MT5, but the bugs fixed in
 e233fc9 and subsequent commits were specifically in the shape of the
 mt5.initialize() and mt5.login() calls — exactly the kind of issue a
 JSON fixture can't catch. A minimal in-memory shim for the MetaTrader5
