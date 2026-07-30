@@ -46,7 +46,7 @@ uv run pre-commit install              # gitleaks secret-scan hook
 
 ## Conventions
 
-- British/Commonwealth English in comments and docs (realise, behaviour, colour). No hyperbole.
+- British/Commonwealth English in comments and docs (realise, behaviour, colour).
 - Python 3.12+; `from __future__ import annotations` in every module.
 - Tests target `snapshot.py` (round-trip) and `sources/mt5.py` (call-shape + field-copy fidelity via a fake MetaTrader5 module). End-to-end CLI tests inject an in-test fake `DataSource` in place of `MT5Source`.
 - After changing commands, architecture, or a gotcha above, update this file and README.md in the same change.
