@@ -64,6 +64,7 @@ Dependencies are kept current by [Renovate](https://docs.renovatebot.com/) (conf
 - Digest, minor, and patch updates **auto-merge** once the `tests` workflow passes.
 - Major updates, and any `MetaTrader5` bump (Windows-only optional extra that CI cannot exercise), open a PR for manual review.
 - `lockFileMaintenance` periodically refreshes `uv.lock` to pick up transitive security patches.
+- Renovate checks direct dependencies against the [OSV](https://osv.dev/) vulnerability database and opens a fix PR when one has a known vulnerability. The Dependency Dashboard issue lists those advisories.
 
 Don't hand-bump these versions — let Renovate's PRs flow through.
 

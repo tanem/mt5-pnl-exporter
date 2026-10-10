@@ -1,5 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "dependencyDashboardOSVVulnerabilitySummary": "all",
   "extends": [
     "config:recommended",
     "helpers:pinGitHubActionDigests"
@@ -7,6 +8,7 @@
   "lockFileMaintenance": {
     "enabled": true
   },
+  "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
       "description": "Auto-merge digest, minor and patch updates once CI passes",
